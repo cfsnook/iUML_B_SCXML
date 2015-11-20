@@ -9,7 +9,7 @@ import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
 
-import ac.soton.eventb.emf.diagrams.importExport.GenerationDescriptor;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
 import ac.soton.eventb.statemachines.AbstractNode;
 import ac.soton.eventb.statemachines.Initial;
@@ -34,13 +34,13 @@ public class ScxmlInitialAttributeRule extends AbstractSCXMLImporterRule impleme
 	}
 	
 	@Override
-	public boolean dependenciesOK(EObject sourceElement, final List<GenerationDescriptor> generatedElements) throws Exception  {
-		machine = (Machine) Find.generatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, scxmlContainer.getName());
-		statemachine = (Statemachine) Find.generatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, scxmlContainer.getName());
-		initialisation = (Event) Find.generatedElement(generatedElements, machine, events, "INITIALISATION");
+	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
+		machine = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, scxmlContainer.getName());
+		statemachine = (Statemachine) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, scxmlContainer.getName());
+		initialisation = (Event) Find.translatedElement(generatedElements, machine, events, "INITIALISATION");
 		targets.clear();
 		for (String initialTarget : scxmlContainer.getInitial()){
-			AbstractNode target = (AbstractNode) Find.generatedElement(generatedElements, statemachine, nodes, StatemachinesPackage.Literals.ABSTRACT_NODE, initialTarget);
+			AbstractNode target = (AbstractNode) Find.translatedElement(generatedElements, statemachine, nodes, StatemachinesPackage.Literals.ABSTRACT_NODE, initialTarget);
 			if (target==null){
 				return false;
 			}
@@ -50,9 +50,9 @@ public class ScxmlInitialAttributeRule extends AbstractSCXMLImporterRule impleme
 	}
 
 	@Override
-	public List<GenerationDescriptor> fire(EObject sourceElement, List<GenerationDescriptor> generatedElements) throws Exception {
+	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
 
-		List<GenerationDescriptor> ret = new ArrayList<GenerationDescriptor>();
+		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 
 		Initial initialState = (Initial) Make.initialState(scxmlContainer.getName()+"_initialState");
 		statemachine.getNodes().add(initialState);

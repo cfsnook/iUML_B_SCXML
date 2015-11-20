@@ -10,7 +10,7 @@ import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 import org.eventb.emf.core.machine.Action;
 
-import ac.soton.eventb.emf.diagrams.importExport.GenerationDescriptor;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
 import ac.soton.eventb.statemachines.State;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
@@ -29,17 +29,17 @@ public class ScxmlOnentryTypeRule extends AbstractSCXMLImporterRule implements I
 	}
 	
 	@Override
-	public boolean dependenciesOK(EObject sourceElement, final List<GenerationDescriptor> generatedElements) throws Exception  {
-		generatedParentState = (State) Find.generatedElement(generatedElements, null, nodes, StatemachinesPackage.Literals.STATE, stateContainer.getId());
+	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
+		generatedParentState = (State) Find.translatedElement(generatedElements, null, nodes, StatemachinesPackage.Literals.STATE, stateContainer.getId());
 		return generatedParentState!=null;
 	}
 
 	@Override
-	public List<GenerationDescriptor> fire(EObject sourceElement, List<GenerationDescriptor> generatedElements) throws Exception {
+	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
 		assert(generatedParentState!=null) : "Not ready to fire()";
 		
 		ScxmlOnentryType scxmlOnentry = (ScxmlOnentryType)sourceElement;
-		List<GenerationDescriptor> ret = new ArrayList<GenerationDescriptor>();
+		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		
 		int i=0;
 		for (ScxmlAssignType assign : scxmlOnentry.getAssign()){

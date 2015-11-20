@@ -25,7 +25,7 @@ import org.eventb.emf.core.machine.MachinePackage;
 
 import ac.soton.eventb.emf.core.extension.coreextension.CoreextensionPackage;
 import ac.soton.eventb.emf.diagrams.importExport.AbstractRule;
-import ac.soton.eventb.emf.diagrams.importExport.GenerationDescriptor;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.eventb.statemachines.TranslationKind;
@@ -67,11 +67,11 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	 * @param eventName
 	 * @return
 	 */
-	protected static Event getOrCreateEvent(ScxmlScxmlType scxmlContainer, List<GenerationDescriptor> oldGD, List<GenerationDescriptor> newGD, String eventName) {
-		Machine machine = (Machine) Find.generatedElement(oldGD, null, null, MachinePackage.Literals.MACHINE, scxmlContainer.getName());
+	protected static Event getOrCreateEvent(ScxmlScxmlType scxmlContainer, List<TranslationDescriptor> oldGD, List<TranslationDescriptor> newGD, String eventName) {
+		Machine machine = (Machine) Find.translatedElement(oldGD, null, null, MachinePackage.Literals.MACHINE, scxmlContainer.getName());
 		Event ev = (Event) Find.named(machine.getEvents(), eventName);
-		if (ev==null) ev =  (Event) Find.generatedElement(oldGD, machine, events, eventName);
-		if (ev==null) ev =  (Event) Find.generatedElement(newGD, machine, events, eventName);
+		if (ev==null) ev =  (Event) Find.translatedElement(oldGD, machine, events, eventName);
+		if (ev==null) ev =  (Event) Find.translatedElement(newGD, machine, events, eventName);
 		if (ev==null) {
 			ev = (Event) Make.event(eventName);
 			newGD.add(Make.descriptor(machine, events, ev ,1));
@@ -89,7 +89,7 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	 * @param ret
 	 * @return
 	 */
-	protected static List<Event> findIncomerEvents(EObject scxmlEObject, List<GenerationDescriptor> generatedElements, List<GenerationDescriptor> ret) {
+	protected static List<Event> findIncomerEvents(EObject scxmlEObject, List<TranslationDescriptor> generatedElements, List<TranslationDescriptor> ret) {
 		List<Event> eventList = new ArrayList<Event>();
 		// find scxml container,
 		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlEObject);
@@ -130,7 +130,7 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	 * @param ret
 	 * @return
 	 */
-	protected static List<Event> findOutgoingEvents(EObject scxmlEObject, List<GenerationDescriptor> generatedElements, List<GenerationDescriptor> ret) {
+	protected static List<Event> findOutgoingEvents(EObject scxmlEObject, List<TranslationDescriptor> generatedElements, List<TranslationDescriptor> ret) {
 		List<Event> eventList = new ArrayList<Event>();
 		// find scxml container,
 		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlEObject);
@@ -180,7 +180,7 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	 * @param ret
 	 * @return
 	 */
-	protected static List<String> getEventNames(ScxmlTransitionType scxmlTransition,  List<GenerationDescriptor> generatedElements, List<GenerationDescriptor> ret){
+	protected static List<String> getEventNames(ScxmlTransitionType scxmlTransition,  List<TranslationDescriptor> generatedElements, List<TranslationDescriptor> ret){
 		List<String> eventNames = new ArrayList<String>();
 		String eventName = getUniqueName(scxmlTransition);
 		EObject source = scxmlTransition.eContainer();

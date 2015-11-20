@@ -2,11 +2,11 @@
 <?eclipse version="3.4"?>
 <plugin>
    <extension
-         id="ac.soton.eventb.emf.diagrams.generator"
+         id="ac.soton.eventb.emf.diagrams.translator"
          point="ac.soton.eventb.emf.diagrams.importExport.rule">
-      <generator
-            adapter_class="ac.soton.iumlb.scxml.importer.IumlbScxmlPorterAdapter"
-            generatorID="ac.soton.iumlb.scxml.importer"
+      <translator
+            adapter_class="ac.soton.eventb.emf.diagrams.importExport.EventBImportAdapter"
+            translatorID="ac.soton.iumlb.scxml.importer"
             name="SCXML Importer"
             root_source_class="DocumentRoot"
             sourcePackage="http://www.w3.org/2005/07/scxml">
@@ -51,7 +51,7 @@
                source_class="ScxmlOnexitType">
          </rule>
          <rule
-               name="scxmlInitialAttributeRule"
+               name="ScxmlInitialAttributeRule"
                rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlInitialAttributeRule"
                source_class="ScxmlScxmlType">
          </rule>
@@ -65,7 +65,7 @@
                rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlFinalTypeRule"
                source_class="ScxmlFinalType">
          </rule>
-      </generator>
+      </translator>
    </extension>
 
 </plugin>

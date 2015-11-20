@@ -10,7 +10,7 @@ import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 import org.eventb.emf.core.machine.Event;
 
-import ac.soton.eventb.emf.diagrams.importExport.GenerationDescriptor;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
 import ac.soton.eventb.statemachines.Final;
 import ac.soton.eventb.statemachines.State;
@@ -42,19 +42,19 @@ public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRu
 	 * 
 	 */
 	@Override
-	public boolean dependenciesOK(EObject sourceElement, final List<GenerationDescriptor> generatedElements) throws Exception  {
+	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
 		((ScxmlFinalType) sourceElement).getId();
 		String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
-		parentSm = (Statemachine) Find.generatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
+		parentSm = (Statemachine) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
 		return parentSm!=null;
 	}
 
 	@Override
-	public List<GenerationDescriptor> fire(EObject sourceElement, List<GenerationDescriptor> generatedElements) throws Exception {
+	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
 		assert(parentSm!=null || smOwner!=null) : "Not ready to fire()";
 		
 		ScxmlFinalType scxmlFinal = (ScxmlFinalType)sourceElement;
-		List<GenerationDescriptor> ret = new ArrayList<GenerationDescriptor>();
+		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		
 		// scxml final translates into iUML-B state with a transition to an iUML-B final node
 		// if nested the transition must elaborate all the events elaborated by transitions that leave the parent state

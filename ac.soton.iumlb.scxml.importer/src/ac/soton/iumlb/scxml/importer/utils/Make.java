@@ -30,7 +30,7 @@ import org.eventb.emf.core.machine.Parameter;
 import org.eventb.emf.core.machine.Variable;
 import org.eventb.emf.core.machine.Witness;
 
-import ac.soton.eventb.emf.diagrams.importExport.GenerationDescriptor;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.statemachines.AbstractNode;
 import ac.soton.eventb.statemachines.Final;
 import ac.soton.eventb.statemachines.Initial;
@@ -55,12 +55,12 @@ public class Make {
 		}
 	}
 	
-	public static GenerationDescriptor descriptor(EObject parent, EStructuralFeature feature, Object value, int priority){
-		return new GenerationDescriptor(parent,feature,value,Integer.valueOf(priority));
+	public static TranslationDescriptor descriptor(EObject parent, EStructuralFeature feature, Object value, int priority){
+		return new TranslationDescriptor(parent,feature,value,Integer.valueOf(priority));
 	}
 	
-	public static GenerationDescriptor descriptor(EObject parent, EStructuralFeature feature, Object value , int priority, Boolean remove) {
-		return new GenerationDescriptor(parent, feature,value,Integer.valueOf(priority), remove);
+	public static TranslationDescriptor descriptor(EObject parent, EStructuralFeature feature, Object value , int priority, Boolean remove) {
+		return new TranslationDescriptor(parent, feature,value,Integer.valueOf(priority), remove);
 	}
 	
 	

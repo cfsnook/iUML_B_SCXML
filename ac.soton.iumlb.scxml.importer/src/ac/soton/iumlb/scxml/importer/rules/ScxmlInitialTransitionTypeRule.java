@@ -14,7 +14,7 @@ import org.eventb.emf.core.machine.Guard;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
 
-import ac.soton.eventb.emf.diagrams.importExport.GenerationDescriptor;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
 import ac.soton.eventb.emf.diagrams.importExport.utils.Find;
 import ac.soton.iumlb.scxml.importer.utils.Make;

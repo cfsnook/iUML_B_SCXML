@@ -13,7 +13,7 @@ import org.eventb.emf.core.EventBNamed;
 
 
 /**
- * Convenience methods for finding things needed in Importer Rules
+ * Convenience methods for finding things needed in Translator Rules
  * 
  * @author cfs
  *

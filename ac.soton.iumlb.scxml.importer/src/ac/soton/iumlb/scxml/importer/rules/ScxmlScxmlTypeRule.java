@@ -8,7 +8,7 @@ import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.core.machine.Machine;
 
-import ac.soton.eventb.emf.diagrams.importExport.GenerationDescriptor;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
 import ac.soton.eventb.statemachines.Statemachine;
 import ac.soton.eventb.emf.diagrams.importExport.utils.Find;
@@ -18,10 +18,10 @@ import ac.soton.iumlb.scxml.importer.utils.Make;
 public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRule {
 			
 	@Override
-	public List<GenerationDescriptor> fire(EObject sourceElement, List<GenerationDescriptor> generatedElements) throws Exception {
+	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
 		
 		ScxmlScxmlType scxml = (ScxmlScxmlType)sourceElement;
-		List<GenerationDescriptor> ret = new ArrayList<GenerationDescriptor>();
+		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		String fileName = scxml.eResource().getURI().toPlatformString(true);
 		String statechartName = scxml.getName();
 		

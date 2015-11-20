@@ -14,7 +14,7 @@ import org.eventb.emf.core.machine.Guard;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
 
-import ac.soton.eventb.emf.diagrams.importExport.GenerationDescriptor;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
 import ac.soton.eventb.statemachines.AbstractNode;
 import ac.soton.eventb.statemachines.Statemachine;
@@ -49,11 +49,11 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 	}
 	
 	@Override
-	public boolean dependenciesOK(EObject sourceElement, final List<GenerationDescriptor> generatedElements) throws Exception  {
-		machine = (Machine) Find.generatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, scxmlContainer.getName());
+	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
+		machine = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, scxmlContainer.getName());
 
 		String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
-		parentSm = (Statemachine) Find.generatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
+		parentSm = (Statemachine) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
 
 		if (parentSm == null) return false;
 		
@@ -61,20 +61,20 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 		String sourceStateName = container instanceof ScxmlStateType? ((ScxmlStateType)sourceElement.eContainer()).getId() :
 									container instanceof ScxmlInitialType? parentSm.getName()+"_initialState" :
 										null;
-		source = (AbstractNode) Find.generatedElement(generatedElements, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, sourceStateName);
+		source = (AbstractNode) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, sourceStateName);
 
 		String targetStateName = ((ScxmlTransitionType) sourceElement).getTarget().get(0);		//we only support single target - ignore the rest
-		target = (AbstractNode) Find.generatedElement(generatedElements, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, targetStateName);
+		target = (AbstractNode) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, targetStateName);
 
 		return parentSm!= null && source!=null && target!=null && machine!=null;
 	}
 
 	@Override
-	public List<GenerationDescriptor> fire(EObject sourceElement, List<GenerationDescriptor> generatedElements) throws Exception {
+	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
 		assert(source!=null && target!=null && machine!=null) : "Not ready to fire()";
 
 		ScxmlTransitionType scxmlTransition = ((ScxmlTransitionType) sourceElement);
-		List<GenerationDescriptor> ret = new ArrayList<GenerationDescriptor>();
+		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		
 		Transition transition = Make.transition(source, target, "");
 		ret.add(Make.descriptor(parentSm, transitions, transition, 1));

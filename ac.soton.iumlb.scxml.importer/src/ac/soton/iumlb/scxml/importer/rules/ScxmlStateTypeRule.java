@@ -8,7 +8,7 @@ import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 
-import ac.soton.eventb.emf.diagrams.importExport.GenerationDescriptor;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
 import ac.soton.eventb.statemachines.Initial;
 import ac.soton.eventb.statemachines.State;
@@ -41,25 +41,25 @@ public class ScxmlStateTypeRule extends AbstractSCXMLImporterRule implements IRu
 	 * 
 	 */
 	@Override
-	public boolean dependenciesOK(EObject sourceElement, final List<GenerationDescriptor> generatedElements) throws Exception  {
+	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
 		((ScxmlStateType) sourceElement).getId();
 		if (sourceElement.eContainer().eClass() ==ScxmlPackage.Literals.SCXML_PARALLEL_TYPE){
 			String smOwnerName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId();
-			smOwner = (StatemachineOwner) Find.generatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE_OWNER, smOwnerName);
+			smOwner = (StatemachineOwner) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE_OWNER, smOwnerName);
 			return smOwner!=null;			
 		}else{
 			String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
-			parentSm = (Statemachine) Find.generatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
+			parentSm = (Statemachine) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
 			return parentSm!=null;
 		}
 	}
 
 	@Override
-	public List<GenerationDescriptor> fire(EObject sourceElement, List<GenerationDescriptor> generatedElements) throws Exception {
+	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
 		assert(parentSm!=null || smOwner!=null) : "Not ready to fire()";
 		
 		ScxmlStateType scxmlState = (ScxmlStateType)sourceElement;
-		List<GenerationDescriptor> ret = new ArrayList<GenerationDescriptor>();
+		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		
 		// states translate into iUML-B states.. when not contained in a parallel 
 		if (!(scxmlState.eContainer().eClass() ==ScxmlPackage.Literals.SCXML_PARALLEL_TYPE)){

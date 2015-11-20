@@ -2,16 +2,9 @@ package ac.soton.iumlb.scxml.importer.strings;
 
 import java.text.MessageFormat;
 
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlAssignType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlDataType;
-import org.eventb.emf.core.EventBNamed;
-import org.eventb.emf.core.machine.Action;
-
-import ac.soton.eventb.emf.core.extension.coreextension.EventBRelationKind;
-import ac.soton.eventb.emf.core.extension.coreextension.TypedParameter;
-import ac.soton.iumlb.scxml.importer.utils.Make;
 
 public class Strings {
 
@@ -356,6 +349,12 @@ public class Strings {
 		return expr;
 	}
 
+	public static String INV_PREDICATE(String anticedent, ScxmlDataType scxml) {
+		String predicate = convertLocation(convertBoolVals(convertDoubleEquals(scxml.getExpr())));
+		if (anticedent != null){
+			predicate = anticedent + "("+ predicate+ ")";
+		}
+		return predicate;
+	}
 
-	
 }
