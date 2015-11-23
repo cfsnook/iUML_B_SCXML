@@ -1,11 +1,12 @@
 /**
- * Copyright (c) 2012 University of Southampton.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2015 - University of Southampton.
+ * All rights reserved. This program and the accompanying materials  are made
+ * available under the terms of the Eclipse Public License v1.0 which accompanies this 
+ * distribution, and is available at http://www.eclipse.org/legal/epl-v10.html
+ * 
+ *
+ * $Id$
  */
-
 package ac.soton.iumlb.scxml.importer.utils;
 
 import java.util.Collections;
@@ -41,7 +42,7 @@ import ac.soton.eventb.statemachines.Transition;
 import ac.soton.eventb.statemachines.TranslationKind;
 
 /**
- * This is a collection of static convenience methods for making objects that are needed in generator Rules
+ * This is a collection of static convenience methods for making objects that are needed in translator Rules
  * 
  */
 
