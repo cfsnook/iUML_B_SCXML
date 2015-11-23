@@ -48,6 +48,7 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	protected static final EReference exitActions = StatemachinesPackage.Literals.STATE__EXIT_ACTIONS;
 	protected static final EReference elaborates = CoreextensionPackage.Literals.EVENT_BEVENT_GROUP__ELABORATES;
 	protected static final EReference eventGroupGuards = CoreextensionPackage.Literals.EVENT_BEVENT_GROUP__GUARDS;
+	protected static final EReference stateInvariants = StatemachinesPackage.Literals.STATE__INVARIANTS;
 	
 	protected static final TranslationKind tkind = TranslationKind.MULTIVAR;
 

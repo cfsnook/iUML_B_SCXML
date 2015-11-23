@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlDataType;
+import org.eclipse.sirius.tests.sample.scxml.ScxmlDatamodelType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
@@ -15,18 +16,20 @@ import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
 import org.eventb.emf.core.machine.Variable;
 
-import ac.soton.eventb.emf.diagrams.importExport.AbstractRule;
-import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
-import ac.soton.iumlb.scxml.importer.strings.Strings;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.utils.Find;
+import ac.soton.eventb.statemachines.State;
+import ac.soton.eventb.statemachines.StatemachinesPackage;
+import ac.soton.iumlb.scxml.importer.strings.Strings;
 import ac.soton.iumlb.scxml.importer.utils.Make;
 
-public class ScxmlDataTypeRule extends AbstractRule implements IRule {
+public class ScxmlDataTypeRule extends AbstractSCXMLImporterRule implements IRule {
 
-	ScxmlScxmlType scxmlContainer=null;
-	Machine machine = null;
-	Event initialisation = null;
+	private ScxmlScxmlType scxmlContainer=null;
+	private Machine machine = null;
+	private Event initialisation = null;
+	private State state;
 	
 	@Override
 	public boolean enabled(final EObject sourceElement) throws Exception  {
@@ -36,8 +39,14 @@ public class ScxmlDataTypeRule extends AbstractRule implements IRule {
 	
 	@Override
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
+		ScxmlDataType scxml = (ScxmlDataType)sourceElement;
 		machine = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, scxmlContainer.getName());
 		initialisation = (Event) Find.translatedElement(generatedElements, machine, events, MachinePackage.Literals.EVENT, "INITIALISATION");
+		if (isOwnedByState(scxml)){
+			String stateName = ((ScxmlStateType)Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, scxml)).getId();
+			state = (State) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATE, stateName);
+			if (state==null) return false;
+		}
 		return machine!=null && initialisation!=null;
 	}
 
@@ -48,15 +57,14 @@ public class ScxmlDataTypeRule extends AbstractRule implements IRule {
 		ScxmlDataType scxml = (ScxmlDataType)sourceElement;
 		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		String vname = Strings.LOCATION(scxml);
-		
 		if (isPredicate(scxml.getExpr())){
-			String anticedent = null;
-			if (scxml.eContainer() instanceof ScxmlStateType){
-				String stateName = ((ScxmlStateType)scxml.eContainer()).getId();
-				anticedent = "\u2200this_"+stateName+"\u00b7this_"+stateName+"\u2208"+stateName+"\u21d2";
+			if (isOwnedByState(scxml)){
+				Invariant invariant =  (Invariant) Make.invariant(vname, Strings.INV_PREDICATE(null, scxml), "");
+				ret.add(Make.descriptor(state, stateInvariants, invariant ,1));				
+			}else{
+				Invariant invariant =  (Invariant) Make.invariant(vname, Strings.INV_PREDICATE(null, scxml), "");
+				ret.add(Make.descriptor(machine, invariants, invariant ,1));		
 			}
-			Invariant invariant =  (Invariant) Make.invariant(vname, Strings.INV_PREDICATE(anticedent, scxml), "");
-			ret.add(Make.descriptor(machine, invariants, invariant ,1));			
 		}else{
 			Variable variable =  (Variable) Make.variable(vname, "");
 			ret.add(Make.descriptor(machine, variables, variable ,1));
@@ -71,5 +79,13 @@ public class ScxmlDataTypeRule extends AbstractRule implements IRule {
 	private boolean isPredicate(String expr) {
 		return expr.contains("=") || expr.contains(">") || expr.contains("<") ;
 	}
+	
+	private boolean isOwnedByState(EObject scxml){
+		EObject owner = scxml.eContainer();
+		if (owner instanceof ScxmlStateType) return true;
+		if (owner instanceof ScxmlDatamodelType) return isOwnedByState(owner);
+		return false;
+	}
+	
 	
 }
