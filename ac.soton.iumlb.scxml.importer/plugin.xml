@@ -16,11 +16,6 @@
                source_class="ScxmlScxmlType">
          </rule>
          <rule
-               name="ScxmlDatamodelTypeRule"
-               rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlDatamodelTypeRule"
-               source_class="ScxmlDatamodelType">
-         </rule>
-         <rule
                name="ScxmlDataTypeRule"
                rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlDataTypeRule"
                source_class="ScxmlDataType">
@@ -29,11 +24,6 @@
                name="ScxmlStateTypeRule"
                rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlStateTypeRule"
                source_class="ScxmlStateType">
-         </rule>
-         <rule
-               name="ScxmlParallelTypeRule"
-               rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlParallelTypeRule"
-               source_class="ScxmlParallelType">
          </rule>
          <rule
                name="ScxmlTransitionTypeRule"
