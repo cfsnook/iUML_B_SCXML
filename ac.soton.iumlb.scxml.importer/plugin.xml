@@ -46,11 +46,6 @@
                source_class="ScxmlScxmlType">
          </rule>
          <rule
-               name="ScxmlInitialTypeRule"
-               rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlInitialTypeRule"
-               source_class="ScxmlInitialType">
-         </rule>
-         <rule
                name="ScxmlFinalTypeRule"
                rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlFinalTypeRule"
                source_class="ScxmlFinalType">
