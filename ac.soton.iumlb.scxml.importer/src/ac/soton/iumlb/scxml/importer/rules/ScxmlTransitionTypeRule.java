@@ -20,8 +20,6 @@ import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlTransitionType;
 import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.core.machine.Guard;
-import org.eventb.emf.core.machine.Machine;
-import org.eventb.emf.core.machine.MachinePackage;
 
 import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
@@ -44,8 +42,6 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 
 
 	ScxmlScxmlType scxmlContainer=null;
-	ScxmlStateType stateContainer=null;  // the state that contains the state containing this transition (if any)
-	Machine machine = null;
 	AbstractNode source = null;
 	AbstractNode target = null;
 	Statemachine parentSm = null;
@@ -53,14 +49,14 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 	@Override
 	public boolean enabled(final EObject sourceElement) throws Exception  {
 		scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
-		stateContainer = (ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, sourceElement.eContainer().eContainer());
-		return scxmlContainer!=null; //  && !(sourceElement.eContainer() instanceof ScxmlInitialType) ;
+		return scxmlContainer!=null;
 	}
 	
 	@Override
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
-		machine = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, scxmlContainer.getName());
-
+		
+		ScxmlStateType stateContainer = (ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, sourceElement.eContainer().eContainer());
+		
 		String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
 		parentSm = (Statemachine) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
 
@@ -75,18 +71,17 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 		String targetStateName = ((ScxmlTransitionType) sourceElement).getTarget().get(0);		//we only support single target - ignore the rest
 		target = (AbstractNode) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, targetStateName);
 
-		return parentSm!= null && source!=null && target!=null && machine!=null;
+		return source!=null && target!=null;
 	}
 
 	@Override
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
-		assert(source!=null && target!=null && machine!=null) : "Not ready to fire()";
+		assert(source!=null && target!=null) : "Not ready to fire()";
 
 		ScxmlTransitionType scxmlTransition = ((ScxmlTransitionType) sourceElement);
 		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		
 		Transition transition = Make.transition(source, target, "");
-		ret.add(Make.descriptor(parentSm, transitions, transition, 1));
 		
 		String guardLabel = "cond";  // may be used in cond guard later
 		
@@ -104,7 +99,9 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			transition.getGuards().add(guard);
 			//ret.add(Make.descriptor(transition, eventGroupGuards, guard, 1));
 		}
-
+		
+		ret.add(Make.descriptor(parentSm, transitions, transition, 1));
+		
 		return ret;
 	}
 	
