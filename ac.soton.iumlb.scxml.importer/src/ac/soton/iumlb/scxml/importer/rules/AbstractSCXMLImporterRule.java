@@ -13,10 +13,10 @@ package ac.soton.iumlb.scxml.importer.rules;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlInitialType;
+import org.eclipse.sirius.tests.sample.scxml.ScxmlLogType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
@@ -27,8 +27,8 @@ import org.eventb.emf.core.machine.MachinePackage;
 
 import ac.soton.eventb.emf.core.extension.coreextension.CoreextensionPackage;
 import ac.soton.eventb.emf.diagrams.importExport.AbstractRule;
-import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
+import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.eventb.statemachines.TranslationKind;
 import ac.soton.iumlb.scxml.importer.utils.Find;
@@ -170,13 +170,16 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	 * This gets a list of event names that should be elaborated by an iUML-B transition when it is generated from the given
 	 * ScxmlTransition. 
 	 * 
-	 * Usually the list contains one event name which is the trigger event of the scxmlTransition, or if no trigger event,
-	 * a name constructed from the source and target state names. 
+	 * the event names are obtained (cumulatively) by the following methods:
 	 * 
-	 * However, initial transitions are treated differently as follows:
-	 * if the transition is in an initial state at the outer statemachine level the name is INITIALISATION, 
-	 * or if the transition is in an initial state of a nested statemachine the names of all the events that
-	 * are associated with incoming transitions to the parent state are returned.
+	 * a) the transition has a trigger event
+	 * b) the transition has log labels
+	 * c) the transition's source is an initial state (see below)
+	 * d) if none of the above provide any labels a default 'source_target' format is used
+	 * 
+	 * if the transition is in an initial state at the outer state chart level the name is INITIALISATION, 
+	 * if the transition is in an initial state of a nested state chart the names of all the events that
+	 * are associated with incoming transitions to the parent state are used.
 	 * 
 	 * @param scxmlTransition
 	 * @param generatedElements
@@ -185,58 +188,75 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	 */
 	protected static List<String> getEventNames(ScxmlTransitionType scxmlTransition,  List<TranslationDescriptor> generatedElements, List<TranslationDescriptor> ret){
 		List<String> eventNames = new ArrayList<String>();
-		String eventName = getUniqueName(scxmlTransition);
-		EObject source = scxmlTransition.eContainer();
-		if (eventName == null || eventName.length()==0 ){
-			if (source instanceof ScxmlInitialType) {
-				if (getStateContainer(scxmlTransition)==null){
-					eventNames.add("INITIALISATION");
-				}else{
-					//when source is a nested Initial we need to elaborate all the parents incomers events
-					for (Event ev : findIncomerEvents(scxmlTransition, generatedElements, ret)){
-						eventNames.add(ev.getName());
-					}
-				}
-			}else{
-				String sourceName = ((ScxmlStateType)source).getId();
-				String targetName = scxmlTransition.getTarget().get(0);
-				eventNames.add(sourceName+"_"+targetName);
-			}
-		}else{
+//		String eventName = getUniqueName(scxmlTransition);
+		
+		//add event name if any
+		String eventName = scxmlTransition.getEvent();
+		if (eventName != null && eventName.length()>0) {
 			eventNames.add(eventName);
 		}
+		
+		//add log labels if any
+		for (ScxmlLogType log : scxmlTransition.getLog()){
+			String logLabel = log.getLabel();
+			if (logLabel != null && logLabel.length()>0) {
+				eventNames.add(logLabel);
+			}
+		}
+
+		EObject source = scxmlTransition.eContainer();
+		
+		//add initialisation events if source is an initial state
+		if (source instanceof ScxmlInitialType) {
+			if (getStateContainer(scxmlTransition)==null){
+				eventNames.add("INITIALISATION");
+			}else{
+				//when source is a nested Initial we need to elaborate all the parents incomers events
+				for (Event ev : findIncomerEvents(scxmlTransition, generatedElements, ret)){
+					eventNames.add(ev.getName());
+				}
+			}
+		}
+			
+		//if no names found default to 'source_target' format
+		if (eventNames.size()==0){
+			for (String targetName : scxmlTransition.getTarget()){
+				eventNames.add(((ScxmlStateType)source).getId()+"_"+targetName);
+			}
+		}
+
 		return eventNames;
 	}
 	
-	/**
-	 * This checks to see whether any other transitions in the same state-machine are triggered by the same event as this one.
-	 * If this is the case the containing (source) state is added to the event name to make them unique events.
-	 * (because conditional behaviour is not supported in iUML-B)
-	 * 
-	 * @param scxmlTransition
-	 * @return
-	 */
-	protected static String getUniqueName(ScxmlTransitionType scxmlTransition) {
-		String trEvNm = scxmlTransition.getEvent();
-		if (trEvNm == null || trEvNm.length()==0) return null;
-		EList<ScxmlStateType> states;
-		ScxmlStateType stateContainer = getStateContainer(scxmlTransition);
-				//(ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, scxmlTransition.eContainer().eContainer());
-		if (stateContainer!= null){
-			states = stateContainer.getState() ;
-		}else{
-			ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlTransition);			
-			states = scxmlContainer.getState();
-		}
-		for (ScxmlStateType state : states){
-			for (ScxmlTransitionType tr : state.getTransition()){
-				if (tr!=scxmlTransition && trEvNm.equals(tr.getEvent())){
-					return trEvNm+"_"+((ScxmlStateType)scxmlTransition.eContainer()).getId();
-				}
-			}
-		}
-		return trEvNm;
-	}
+//	/**
+//	 * This checks to see whether any other transitions in the same state-machine are triggered by the same event as this one.
+//	 * If this is the case the containing (source) state is added to the event name to make them unique events.
+//	 * (because conditional behaviour is not supported in iUML-B)
+//	 * 
+//	 * @param scxmlTransition
+//	 * @return
+//	 */
+//	protected static String getUniqueName(ScxmlTransitionType scxmlTransition) {
+//		String trEvNm = scxmlTransition.getEvent();
+//		if (trEvNm == null || trEvNm.length()==0) return null;
+//		EList<ScxmlStateType> states;
+//		ScxmlStateType stateContainer = getStateContainer(scxmlTransition);
+//				//(ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, scxmlTransition.eContainer().eContainer());
+//		if (stateContainer!= null){
+//			states = stateContainer.getState() ;
+//		}else{
+//			ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlTransition);			
+//			states = scxmlContainer.getState();
+//		}
+//		for (ScxmlStateType state : states){
+//			for (ScxmlTransitionType tr : state.getTransition()){
+//				if (tr!=scxmlTransition && trEvNm.equals(tr.getEvent())){
+//					return trEvNm+"_"+((ScxmlStateType)scxmlTransition.eContainer()).getId();
+//				}
+//			}
+//		}
+//		return trEvNm;
+//	}
 	
 	/**
 	 * returns the containing ScxmlStateType representing the statechart that contains this transition
