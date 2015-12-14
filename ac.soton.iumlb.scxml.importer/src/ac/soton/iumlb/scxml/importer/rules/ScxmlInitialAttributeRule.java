@@ -11,6 +11,7 @@
 package ac.soton.iumlb.scxml.importer.rules;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.emf.ecore.EObject;
@@ -30,50 +31,63 @@ import ac.soton.eventb.emf.diagrams.importExport.utils.Find;
 import ac.soton.iumlb.scxml.importer.utils.Make;
 
 public class ScxmlInitialAttributeRule extends AbstractSCXMLImporterRule implements IRule {
-			
-	private ScxmlScxmlType scxmlContainer;
-	private Machine machine;
-	private Statemachine statemachine;
-	private Event initialisation;
-	private List<AbstractNode> targets = new ArrayList<AbstractNode>();
+	
+	private class Refinement {
+		private Statemachine statemachine = null;
+		private Event initialisation = null;
+		private List<AbstractNode> targets = new ArrayList<AbstractNode>();	
+	}
+	
+	private List<Refinement> refinements = new ArrayList<Refinement>();
 
 	@Override
 	public boolean enabled(final EObject sourceElement) throws Exception  {
-		scxmlContainer = (ScxmlScxmlType)  sourceElement;
+		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType)  sourceElement;
 		return scxmlContainer!=null && !scxmlContainer.getInitial().isEmpty() ;
 	}
 	
 	@Override
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
-		machine = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, scxmlContainer.getName());
-		statemachine = (Statemachine) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, scxmlContainer.getName());
-		initialisation = (Event) Find.translatedElement(generatedElements, machine, events, "INITIALISATION");
-		targets.clear();
-		for (String initialTarget : scxmlContainer.getInitial()){
-			AbstractNode target = (AbstractNode) Find.translatedElement(generatedElements, statemachine, nodes, StatemachinesPackage.Literals.ABSTRACT_NODE, initialTarget);
-			if (target==null){
-				return false;
+		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType)  sourceElement;
+		refinements.clear();
+		int refinementLevel = getRefinementLevel(sourceElement);
+		int depth = getRefinementDepth(sourceElement);
+		for (int i=refinementLevel; i<=depth; i++){
+			Refinement ref = new Refinement();
+			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, getMachineName(scxmlContainer,i));
+			ref.statemachine = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, scxmlContainer.getName()); 
+			ref.initialisation= (Event) Find.element(m, m, events, MachinePackage.Literals.EVENT, "INITIALISATION");
+			if (ref.statemachine==null || ref.initialisation==null) return false;
+			ref.targets.clear();
+			for (String initialTarget : scxmlContainer.getInitial()){
+				AbstractNode target = (AbstractNode) Find.element(ref.statemachine, ref.statemachine, nodes, StatemachinesPackage.Literals.ABSTRACT_NODE, initialTarget);
+				if (target==null){
+					return false;
+				}
+				ref.targets.add(target);
 			}
-			targets.add(target);
+			refinements.add(ref);
 		}
-		return initialisation!=null && statemachine!= null;
+		return true;
 	}
 
 	@Override
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
+		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType)  sourceElement;
 
-		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
+		for (Refinement ref : refinements){
+			Initial initialState = (Initial) Make.initialState(scxmlContainer.getName()+"_initialState");
+			ref.statemachine.getNodes().add(initialState);			
+			
+			for (AbstractNode target : ref.targets){
+				Transition tr = (Transition) Make.transition(initialState, target, "");
+				tr.getElaborates().add(ref.initialisation);
+				ref.statemachine.getTransitions().add(tr);
+			}			
 
-		Initial initialState = (Initial) Make.initialState(scxmlContainer.getName()+"_initialState");
-		statemachine.getNodes().add(initialState);
-		//ret.add(Make.descriptor(statemachine, nodes, initialState, 1));
-		
-		for (AbstractNode target : targets){
-			Transition tr = (Transition) Make.transition(initialState, target, "");
-			tr.getElaborates().add(initialisation);
-			statemachine.getTransitions().add(tr);
 		}
-		return ret;
+
+		return Collections.emptyList(); //ret;
 	}
 
 }

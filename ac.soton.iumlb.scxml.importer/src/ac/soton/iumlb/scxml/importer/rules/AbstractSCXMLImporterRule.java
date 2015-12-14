@@ -12,20 +12,27 @@ package ac.soton.iumlb.scxml.importer.rules;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.sirius.tests.sample.scxml.ScxmlDataType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlInitialType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlLogType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlTransitionType;
+import org.eventb.emf.core.EventBElement;
 import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
 
 import ac.soton.eventb.emf.core.extension.coreextension.CoreextensionPackage;
+import ac.soton.eventb.emf.core.extension.navigator.refiner.AbstractElementRefiner;
+import ac.soton.eventb.emf.core.extension.navigator.refiner.ElementRefinerRegistry;
 import ac.soton.eventb.emf.diagrams.importExport.AbstractRule;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
 import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
@@ -59,25 +66,22 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	
 	
 	/**
-	 * This finds an event by name by looking in the following (in this order)
-	 *  the machine's events (machine is a field of this class set up by enable())
-	 *  the given list of old GenerationDescriptors
-	 *  the given list of new GenerationDescriptors
-	 *  if no such event is found a new event is created and added to the new GenerationDescriptors
+	 * This finds an event in the given machine by name by looking in the following (in this order)
+	 *  the given machine's events
+	 *  the given list of GenerationDescriptors
+	 *  if no such event is found a new event is created and added to the machine
 	 *  
-	 * @param oldGD
-	 * @param newGD
+	 * @param machine
+	 * @param descriptors
 	 * @param eventName
 	 * @return
 	 */
-	protected static Event getOrCreateEvent(ScxmlScxmlType scxmlContainer, List<TranslationDescriptor> oldGD, List<TranslationDescriptor> newGD, String eventName) {
-		Machine machine = (Machine) Find.translatedElement(oldGD, null, null, MachinePackage.Literals.MACHINE, scxmlContainer.getName());
+	protected static Event getOrCreateEvent(Machine machine, List<TranslationDescriptor> descriptors, String eventName) {
 		Event ev = (Event) Find.named(machine.getEvents(), eventName);
-		if (ev==null) ev =  (Event) Find.translatedElement(oldGD, machine, events, eventName);
-		if (ev==null) ev =  (Event) Find.translatedElement(newGD, machine, events, eventName);
+		if (ev==null) ev =  (Event) Find.translatedElement(descriptors, machine, events, eventName);
 		if (ev==null) {
 			ev = (Event) Make.event(eventName);
-			newGD.add(Make.descriptor(machine, events, ev ,1));
+			machine.getEvents().add(ev);
 		}
 		return ev;
 	}
@@ -87,12 +91,12 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	 * of the given EObject (which is assumed to be an element in an SCXML state chart)
 	 * (n.b. the real parent super-state is not a state representing a parallel region but a container of the parallel)
 	 * 
-	 * @param scxmlEObject 			an element of a nested SCXML state chart
-	 * @param generatedElements
-	 * @param ret
+	 * @param scxmlEObject - an element of a nested SCXML state chart
+	 * @param machine	-	the relevant machine for the refinement level
+	 * @param generatedElements - new elements to also be searched (machine must be the parent)
 	 * @return
 	 */
-	protected static List<Event> findIncomerEvents(EObject scxmlEObject, List<TranslationDescriptor> generatedElements, List<TranslationDescriptor> ret) {
+	protected static List<Event> findIncomerEvents(EObject scxmlEObject, Machine machine, List<TranslationDescriptor> generatedElements) {
 		List<Event> eventList = new ArrayList<Event>();
 		// find scxml container,
 		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlEObject);
@@ -110,10 +114,10 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 		for (EObject possible : Find.eAllContents(scxmlContainer, ScxmlPackage.Literals.SCXML_TRANSITION_TYPE)){
 			if (((ScxmlTransitionType)possible).getTarget().contains(scxmlParentStateName)){
 				// find names of events for this transition
-				List<String> eventNames = getEventNames(((ScxmlTransitionType)possible), generatedElements, ret);
+				List<String> eventNames = getEventNames(((ScxmlTransitionType)possible), machine, generatedElements);
 				// find events similarly named in machine and/or generation descriptors
 				for (String eventName : eventNames){
-					Event ev = getOrCreateEvent(scxmlContainer, generatedElements, ret, eventName);
+					Event ev = getOrCreateEvent(machine, generatedElements, eventName);
 					if (ev!=null && !eventList.contains(ev)) {
 						eventList.add(ev);
 					}
@@ -129,14 +133,12 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	 * (n.b. the real parent super-state is not a state representing a parallel region but a container of the parallel)
 	 * 
 	 * @param scxmlEObject 			an element of a nested SCXML state chart
-	 * @param generatedElements
-	 * @param ret
+	 * @param machine	-	the relevant machine for the refinement level
+	 * @param generatedElements - new elements to also be searched (machine must be the parent)
 	 * @return
 	 */
-	protected static List<Event> findOutgoingEvents(EObject scxmlEObject, List<TranslationDescriptor> generatedElements, List<TranslationDescriptor> ret) {
+	protected static List<Event> findOutgoingEvents(EObject scxmlEObject, Machine machine, List<TranslationDescriptor> generatedElements) {
 		List<Event> eventList = new ArrayList<Event>();
-		// find scxml container,
-		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlEObject);
 		// find scxml parent state (i.e. the real parent state, not a region)
 		EObject realScxmlParentState = scxmlEObject.eContainer();
 		while (!(realScxmlParentState instanceof ScxmlStateType && 
@@ -146,17 +148,13 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 			realScxmlParentState = realScxmlParentState.eContainer();
 		}
 		
-//		String scxmlParentStateName = ((ScxmlStateType)realScxmlParentState).getId();
-//		if (scxmlParentStateName == null) return eventList;
-		
-		// search contents for transitions that target the real scxml parent state
-		
+		// for transitions that source the real scxml parent state
 		for (ScxmlTransitionType tr : ((ScxmlStateType)realScxmlParentState).getTransition()){
 			// find names of events for this transition
-			List<String> eventNames = getEventNames(tr, generatedElements, ret);
+			List<String> eventNames = getEventNames(tr, machine, generatedElements);
 			// find events similarly named in machine and/or generation descriptors
 			for (String eventName : eventNames){
-				Event ev = getOrCreateEvent(scxmlContainer, generatedElements, ret, eventName);
+				Event ev = getOrCreateEvent(machine, generatedElements, eventName);
 				if (ev!=null && !eventList.contains(ev)) {
 					eventList.add(ev);
 				}
@@ -182,11 +180,11 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	 * are associated with incoming transitions to the parent state are used.
 	 * 
 	 * @param scxmlTransition
-	 * @param generatedElements
-	 * @param ret
+	 * @param machine	-	the relevant machine for the refinement level
+	 * @param generatedElements - new elements to also be searched (machine must be the parent)
 	 * @return
 	 */
-	protected static List<String> getEventNames(ScxmlTransitionType scxmlTransition,  List<TranslationDescriptor> generatedElements, List<TranslationDescriptor> ret){
+	protected static List<String> getEventNames(ScxmlTransitionType scxmlTransition, Machine machine, List<TranslationDescriptor> generatedElements){
 		List<String> eventNames = new ArrayList<String>();
 //		String eventName = getUniqueName(scxmlTransition);
 		
@@ -212,7 +210,7 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 				eventNames.add("INITIALISATION");
 			}else{
 				//when source is a nested Initial we need to elaborate all the parents incomers events
-				for (Event ev : findIncomerEvents(scxmlTransition, generatedElements, ret)){
+				for (Event ev : findIncomerEvents(scxmlTransition, machine, generatedElements)){
 					eventNames.add(ev.getName());
 				}
 			}
@@ -228,35 +226,6 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 		return eventNames;
 	}
 	
-//	/**
-//	 * This checks to see whether any other transitions in the same state-machine are triggered by the same event as this one.
-//	 * If this is the case the containing (source) state is added to the event name to make them unique events.
-//	 * (because conditional behaviour is not supported in iUML-B)
-//	 * 
-//	 * @param scxmlTransition
-//	 * @return
-//	 */
-//	protected static String getUniqueName(ScxmlTransitionType scxmlTransition) {
-//		String trEvNm = scxmlTransition.getEvent();
-//		if (trEvNm == null || trEvNm.length()==0) return null;
-//		EList<ScxmlStateType> states;
-//		ScxmlStateType stateContainer = getStateContainer(scxmlTransition);
-//				//(ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, scxmlTransition.eContainer().eContainer());
-//		if (stateContainer!= null){
-//			states = stateContainer.getState() ;
-//		}else{
-//			ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlTransition);			
-//			states = scxmlContainer.getState();
-//		}
-//		for (ScxmlStateType state : states){
-//			for (ScxmlTransitionType tr : state.getTransition()){
-//				if (tr!=scxmlTransition && trEvNm.equals(tr.getEvent())){
-//					return trEvNm+"_"+((ScxmlStateType)scxmlTransition.eContainer()).getId();
-//				}
-//			}
-//		}
-//		return trEvNm;
-//	}
 	
 	/**
 	 * returns the containing ScxmlStateType representing the statechart that contains this transition
@@ -268,4 +237,90 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 		return 	scxmlTransition.eContainer() == null? null :
 			(ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, scxmlTransition.eContainer().eContainer());
 	}
+	
+	
+	/**
+	 * This finds the refinement depth required by the Scxml model containing the given Scxml element
+	 * @param scxml element
+	 * @return integer representing the number of refinements needed
+	 */
+	protected int getRefinementDepth(EObject scxmlElement) {
+		int depth = 0;
+		ScxmlScxmlType scxml = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlElement);
+		List<EObject> dataTypes = Find.eAllContents(scxml, ScxmlPackage.Literals.SCXML_DATA_TYPE);
+		for (EObject dataType : dataTypes){
+			if ("Refinement".equals(((ScxmlDataType)dataType).getId())){
+				int ref = Integer.parseInt(((ScxmlDataType)dataType).getExpr());
+				depth = ref>depth? ref : depth;
+			}
+		}
+		return depth;
+	}
+	
+	/**
+	 * Returns the starting refinement level for this scxml element
+	 * This is given in a 'Refinement' data item in the datamodel attached to the element,
+	 * or, if none, the refinement level of its parent,
+	 * or, if none, 0
+	 * 
+	 * @param scxmlElement
+	 * @return
+	 */
+	protected int getRefinementLevel(EObject scxmlElement){
+		List<EObject> dataTypes = getData(scxmlElement);		
+		for (EObject data : dataTypes){
+			if ("Refinement".equals(((ScxmlDataType)data).getId())){
+				return Integer.parseInt(((ScxmlDataType)data).getExpr());
+			}
+		}
+		if (scxmlElement.eContainer()==null){
+			return 0;
+		}else{
+			return getRefinementLevel(scxmlElement.eContainer());
+		}
+	}
+	
+	/**
+	 * convenience method that returns a list of data elements that are in the dataModel
+	 *  attached directly to the given scxml element
+	 * 
+	 * @param scxmlElement
+	 * @return
+	 */
+	protected List<EObject> getData(EObject scxmlElement){
+		ArrayList<EObject> ret = new ArrayList<EObject>();
+		List<EObject> dataModels = Find.eContents(scxmlElement, ScxmlPackage.Literals.SCXML_DATAMODEL_TYPE);
+		for (EObject dataModel : dataModels){
+			ret.addAll(Find.eContents(dataModel, ScxmlPackage.Literals.SCXML_DATA_TYPE));
+		}
+		return ret;
+	}
+	
+	/**
+	 * refine - this makes a new element that refines the abstract one
+	 * 
+	 * @param sourceElement  - contained in a resource (used as basis for constructing a URI for the abstract element)
+	 * @param abstractElement - to be refined (must be contained in a machine but not necessarily in a resource)
+	 * @return refined element
+	 */
+	protected EObject refine(EObject sourceElement, EventBElement abstractElement) {
+		URI uri = EcoreUtil.getURI(sourceElement);
+		uri = uri.trimFragment().trimSegments(1);
+		uri = uri.appendSegment(((Machine)abstractElement.getContaining(MachinePackage.Literals.MACHINE)).getName());
+		uri = uri.appendFileExtension("bum");
+		uri = uri.appendFragment(abstractElement.getReference());
+		AbstractElementRefiner refiner = ElementRefinerRegistry.getRegistry().getRefiner(abstractElement);
+		Map<EObject,EObject> copy = refiner.refine(uri, abstractElement, null);
+		EObject refinedElement = copy.get(abstractElement);
+		return refinedElement;
+	}
+
+	/**
+	 * @param name
+	 * @return
+	 */
+	protected String getMachineName(ScxmlScxmlType scxmlContainer, int refinementLevel) {
+		return scxmlContainer.getName()+"_"+refinementLevel;
+	}
+
 }

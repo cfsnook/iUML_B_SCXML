@@ -21,8 +21,13 @@
                source_class="ScxmlDataType">
          </rule>
          <rule
-               name="ScxmlStateTypeRule"
-               rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlStateTypeRule"
+               name="ScxmlStateType2StateRule"
+               rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlStateType2StateRule"
+               source_class="ScxmlStateType">
+         </rule>
+         <rule
+               name="ScxmlStateType2StatemachineRule"
+               rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlStateType2StatemachineRule"
                source_class="ScxmlStateType">
          </rule>
          <rule

@@ -11,6 +11,7 @@
 package ac.soton.iumlb.scxml.importer.rules;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.emf.ecore.EObject;
@@ -21,6 +22,8 @@ import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlTransitionType;
 import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.core.machine.Guard;
+import org.eventb.emf.core.machine.Machine;
+import org.eventb.emf.core.machine.MachinePackage;
 
 import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
@@ -41,15 +44,17 @@ import ac.soton.iumlb.scxml.importer.utils.Make;
  */
 public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implements IRule {
 
+	private class Refinement {
+		private Machine machine = null;
+		private Statemachine statemachine = null;
+		private AbstractNode source = null;
+		private AbstractNode target = null;	
+	}
+	private List<Refinement> refinements = new ArrayList<Refinement>();
 
-	ScxmlScxmlType scxmlContainer=null;
-	AbstractNode source = null;
-	AbstractNode target = null;
-	Statemachine parentSm = null;
-	
 	@Override
 	public boolean enabled(final EObject sourceElement) throws Exception  {
-		scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
+		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
 		return scxmlContainer!=null;
 	}
 	
@@ -57,53 +62,73 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
 		
 		ScxmlStateType stateContainer = (ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, sourceElement.eContainer().eContainer());
-		
+		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
+		refinements.clear();
+		int refinementLevel = getRefinementLevel(sourceElement);
+		int depth = getRefinementDepth(sourceElement);		
 		String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
-		parentSm = (Statemachine) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
-
-		if (parentSm == null) return false;
 		
-		EObject container = sourceElement.eContainer();
-		String sourceStateName = container instanceof ScxmlStateType? ((ScxmlStateType)sourceElement.eContainer()).getId() :
-									container instanceof ScxmlInitialType? parentSm.getName()+"_initialState" :
-										null;
-		source = (AbstractNode) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, sourceStateName);
-
-		String targetStateName = ((ScxmlTransitionType) sourceElement).getTarget().get(0);		//we only support single target - ignore the rest
-		target = (AbstractNode) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, targetStateName);
-
-		return source!=null && target!=null;
+		for (int i=refinementLevel; i<=depth; i++){
+			Refinement ref = new Refinement();
+			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, getMachineName(scxmlContainer,i));
+			ref.machine = m;
+			if (ref.machine == null) 
+				return false;
+			
+			ref.statemachine = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
+			if (ref.statemachine == null) 
+				return false;
+			
+			EObject container = sourceElement.eContainer();
+			String sourceStateName = container instanceof ScxmlStateType? ((ScxmlStateType)sourceElement.eContainer()).getId() :
+										container instanceof ScxmlInitialType? ref.statemachine.getName()+"_initialState" :
+											null;
+			ref.source = (AbstractNode) Find.element(m, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, sourceStateName);
+			if (ref.source == null) 
+				return false;	
+			String targetStateName = ((ScxmlTransitionType) sourceElement).getTarget().get(0);		//we only support single target - ignore the rest
+			ref.target = (AbstractNode) Find.element(m, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, targetStateName);
+			if (ref.target == null) 
+				return false;
+			refinements.add(ref);
+		}
+		return true;
 	}
 
 	@Override
-	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
-		assert(source!=null && target!=null) : "Not ready to fire()";
-
+	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> translatedElements) throws Exception {
 		ScxmlTransitionType scxmlTransition = ((ScxmlTransitionType) sourceElement);
-		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
-		
-		Transition transition = Make.transition(source, target, "");
-		
-		String guardLabel = "cond";  // may be used in cond guard later
-		
-		for (String eventName: getEventNames(scxmlTransition,  generatedElements, ret)){
-			Event ev = getOrCreateEvent(scxmlContainer,generatedElements, ret, eventName);
-			transition.getElaborates().add(ev);
-			//ret.add(Make.descriptor(transition, elaborates, ev ,1));
-			guardLabel=guardLabel+"_"+ev.getName();
+		Machine abstractMachine = null;
+		for (Refinement ref : refinements){
+			Transition transition = Make.transition(ref.source, ref.target, "");
+			ref.statemachine.getTransitions().add(transition);
+			String guardLabel = "cond";  // may be used in cond guard later
+			if (ref.machine.getRefinesNames().size()>0){
+				abstractMachine = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE,
+						ref.machine.getRefinesNames().get(0));
+			}else{
+				abstractMachine=null;
+			}
+			for (String eventName: getEventNames(scxmlTransition, ref.machine, translatedElements)){
+				Event ev = getOrCreateEvent(ref.machine, translatedElements, eventName);
+				if (abstractMachine!=null){
+					Event refinedEvent = (Event) Find.element(abstractMachine, abstractMachine, events, MachinePackage.Literals.EVENT, eventName);
+					if (refinedEvent!=null && !ev.getRefinesNames().contains(eventName)){
+						//ev.getRefines().add(refinedEvent);
+						ev.getRefinesNames().add(eventName);
+					}
+				}
+				transition.getElaborates().add(ev);
+				guardLabel=guardLabel+"_"+ev.getName();
+			}
+			//cond -> guard
+			String cond = scxmlTransition.getCond();
+			if (cond!=null && cond.length()>0) {
+				Guard guard = (Guard) Make.guard(guardLabel, false, Strings.COND_GUARD(cond), "");
+				transition.getGuards().add(guard);
+			}
 		}
-		
-		//cond -> guard
-		String cond = scxmlTransition.getCond();
-		if (cond!=null && cond.length()>0) {
-			Guard guard = (Guard) Make.guard(guardLabel, false, Strings.COND_GUARD(cond), "");
-			transition.getGuards().add(guard);
-			//ret.add(Make.descriptor(transition, eventGroupGuards, guard, 1));
-		}
-		
-		ret.add(Make.descriptor(parentSm, transitions, transition, 1));
-		
-		return ret;
+		return Collections.emptyList();
 	}
 	
 }

@@ -15,56 +15,55 @@ import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.sirius.tests.sample.scxml.ScxmlFinalType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
-import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
 
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
 import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.utils.Find;
-import ac.soton.eventb.statemachines.Final;
 import ac.soton.eventb.statemachines.State;
 import ac.soton.eventb.statemachines.Statemachine;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
-import ac.soton.eventb.statemachines.Transition;
 import ac.soton.iumlb.scxml.importer.utils.Make;
 
-public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRule {
+public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implements IRule {
 
 
 	ScxmlScxmlType scxmlContainer=null;
 	ScxmlStateType stateContainer=null;
 	List<Statemachine> statemachines = new ArrayList<Statemachine>();
 
-	
+	/**
+	 * if the scxml state is contained in a parallel it does not generate a iUML-B state, otherwise, if
+	 * the scxml state is contained in another state or in a top level scxml element then it will be used to generate an iUML-B state
+	 * 
+	 */
 	@Override
 	public boolean enabled(final EObject sourceElement) throws Exception  {
 		scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
 		stateContainer = (ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, sourceElement.eContainer());
-		return scxmlContainer!=null;
+		return scxmlContainer!=null && sourceElement.eContainer().eClass() !=ScxmlPackage.Literals.SCXML_PARALLEL_TYPE;
 	}
 	
 	/**
-	 * the scxml final will be used to generate an iUML-B state
-	 *   therefore we need to check that the corresponding parent state-machines have already been generated.
+	 * 
+	 *  check that the corresponding parent statemachines have already been generated.
 	 * 
 	 */
 	@Override
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> translatedElements) throws Exception  {
-		((ScxmlFinalType) sourceElement).getId();
-		String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
 		statemachines.clear();
-		int refinementLevel = getRefinementLevel(sourceElement);
+		int refinementLevel = getRefinementLevel(sourceElement.eContainer()); //refinement level is from the parent, not this ScxmlState. 
 		int depth = getRefinementDepth(sourceElement);
 		for (int i=refinementLevel; i<=depth; i++){
 			Machine m = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE, getMachineName(scxmlContainer,i));
-			Statemachine sm = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
-			if (sm==null) return false;
-			statemachines.add(sm);			
+			String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
+			Statemachine psm = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
+			if (psm==null) return false;
+			statemachines.add(psm);
 		}
 		return true;
 	}
@@ -72,41 +71,20 @@ public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRu
 	@Override
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
 
-		ScxmlFinalType scxmlFinal = (ScxmlFinalType)sourceElement;
-
-		State state = null;
+		ScxmlStateType scxmlState = (ScxmlStateType)sourceElement;
 		
-		for (Statemachine sm : statemachines){
-			// scxml final translates into iUML-B state with a transition to an iUML-B final node
-			// if nested the transition must elaborate all the events elaborated by transitions that leave the parent state
+		// states translate into iUML-B states.. 
+		State state = null;
+		for (Statemachine psm : statemachines){
 			if (state==null){
-				state = (State)Make.state(scxmlFinal.getId(), "");
+				state = (State)Make.state(scxmlState.getId(), "");
 			}else{
 				state = (State) refine(scxmlContainer, state);
 			}
-
-			sm.getNodes().add(state);
-			
-			Final finals = (Final)Make.finalState(sm.getName()+"_final");
-			sm.getNodes().add(finals);
-		
-			Transition tr = (Transition)Make.transition(state, finals, "");
-			sm.getTransitions().add(tr);
-
-			// add events to tr.elaborates
-			Machine machine = (Machine) sm.getContaining(MachinePackage.Literals.MACHINE);
-			List<String> eventNames = new ArrayList<String>();
-			for (Event ev : findOutgoingEvents(scxmlFinal, machine, generatedElements)){
-				eventNames.add(ev.getName());
-			}
-			for (String eventName: eventNames){
-				Event ev = getOrCreateEvent(machine, generatedElements, eventName);
-				tr.getElaborates().add(ev);
-			}
+			psm.getNodes().add(state);
 		}
+		
 		return Collections.emptyList();
 	}
 	
-
-
 }

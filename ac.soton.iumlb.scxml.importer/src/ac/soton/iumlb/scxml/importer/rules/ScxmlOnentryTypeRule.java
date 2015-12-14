@@ -11,14 +11,18 @@
 package ac.soton.iumlb.scxml.importer.rules;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlAssignType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlOnentryType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
+import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 import org.eventb.emf.core.machine.Action;
+import org.eventb.emf.core.machine.Machine;
+import org.eventb.emf.core.machine.MachinePackage;
 
 import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
 import ac.soton.eventb.emf.diagrams.importExport.IRule;
@@ -31,7 +35,7 @@ import ac.soton.iumlb.scxml.importer.utils.Make;
 public class ScxmlOnentryTypeRule extends AbstractSCXMLImporterRule implements IRule {
 
 	ScxmlStateType stateContainer=null;
-	State generatedParentState = null;
+	List<State> states = new ArrayList<State>();
 	
 	public boolean enabled(final EObject sourceElement) throws Exception  {
 		stateContainer = (ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, sourceElement.eContainer());
@@ -40,25 +44,30 @@ public class ScxmlOnentryTypeRule extends AbstractSCXMLImporterRule implements I
 	
 	@Override
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
-		generatedParentState = (State) Find.translatedElement(generatedElements, null, nodes, StatemachinesPackage.Literals.STATE, stateContainer.getId());
-		return generatedParentState!=null;
+		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
+		states.clear();
+		int refinementLevel = getRefinementLevel(sourceElement);
+		int depth = getRefinementDepth(sourceElement);
+		for (int i=refinementLevel; i<=depth; i++){
+			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, getMachineName(scxmlContainer,i));
+			State st =  (State) Find.element(m, null, nodes, StatemachinesPackage.Literals.STATE, stateContainer.getId());
+			if (st==null) return false;
+			states.add(st);
+		}
+		return true;
 	}
 
 	@Override
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
-		assert(generatedParentState!=null) : "Not ready to fire()";
-		
-		ScxmlOnentryType scxmlOnentry = (ScxmlOnentryType)sourceElement;
-		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
-		
-		int i=0;
-		for (ScxmlAssignType assign : scxmlOnentry.getAssign()){
-			Action action = (Action) Make.action(stateContainer.getId()+"_onentry_"+i, Strings.ASSIGN_ACTION(assign));
-			generatedParentState.getEntryActions().add(action);
-			//ret.add(Make.descriptor(generatedParentState, entryActions, action ,1));
-			i++;
+		for (State st : states){
+			int i=0;
+			for (ScxmlAssignType assign : ((ScxmlOnentryType)sourceElement).getAssign()){
+				Action action = (Action) Make.action(stateContainer.getId()+"_onentry_"+i, Strings.ASSIGN_ACTION(assign));
+				st.getEntryActions().add(action);
+				i++;
+			}	
 		}
-		return ret;
+		return Collections.emptyList();
 	}
 	
 }
