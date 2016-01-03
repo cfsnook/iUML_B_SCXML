@@ -25,14 +25,14 @@ import org.eventb.emf.core.machine.Guard;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
 
-import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
-import ac.soton.eventb.emf.diagrams.importExport.IRule;
+import ac.soton.emf.translator.IRule;
+import ac.soton.emf.translator.TranslationDescriptor;
+import ac.soton.emf.translator.utils.Find;
 import ac.soton.eventb.statemachines.AbstractNode;
 import ac.soton.eventb.statemachines.Statemachine;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.eventb.statemachines.Transition;
 import ac.soton.iumlb.scxml.importer.strings.Strings;
-import ac.soton.eventb.emf.diagrams.importExport.utils.Find;
 import ac.soton.iumlb.scxml.importer.utils.Make;
 
 /**

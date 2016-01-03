@@ -22,12 +22,12 @@ import org.eventb.emf.core.Project;
 import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.core.machine.Machine;
 
+import ac.soton.emf.translator.IRule;
+import ac.soton.emf.translator.TranslationDescriptor;
 import ac.soton.eventb.emf.core.extension.navigator.refiner.AbstractElementRefiner;
 import ac.soton.eventb.emf.core.extension.navigator.refiner.ElementRefinerRegistry;
-import ac.soton.eventb.emf.diagrams.importExport.IRule;
-import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
-import ac.soton.eventb.emf.diagrams.importExport.utils.Find;
 import ac.soton.eventb.statemachines.Statemachine;
+import ac.soton.iumlb.scxml.importer.utils.Find;
 import ac.soton.iumlb.scxml.importer.utils.Make;
 
 public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRule {

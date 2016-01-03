@@ -10,8 +10,13 @@
  *******************************************************************************/
 package ac.soton.iumlb.scxml.importer.utils;
 
+import java.io.IOException;
+
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EObject;
 import org.eventb.emf.core.EventBNamed;
+import org.eventb.emf.core.Project;
+
 
 
 /**
@@ -21,7 +26,7 @@ import org.eventb.emf.core.EventBNamed;
  *
  */
 
-public class Find extends ac.soton.eventb.emf.diagrams.importExport.utils.Find {
+public class Find extends ac.soton.emf.translator.utils.Find {
 	
 /**
  * Find by name, an element in a list of EventBNamed elements
@@ -33,6 +38,30 @@ public class Find extends ac.soton.eventb.emf.diagrams.importExport.utils.Find {
 		for (EventBNamed element : collection){
 			if (name.equals(element.getName())) return element;
 		}
+		return null;
+	}
+	
+	
+	/**
+	 * find the containing Project for this element
+	 * 
+	 * CURRENTLY RETURNS NULL
+	 * 
+	 * @param machine
+	 * @return
+	 * @throws IOException
+	 */
+	public static Project project(EObject sourceElement) throws IOException {
+//		URI eventBelementUri = eventBelement.getURI();
+//		URI projectUri = eventBelementUri.trimFragment().trimSegments(1);
+//		ProjectResource projectResource = new ProjectResource();
+//		projectResource.setURI(eventBelement.getURI());
+//		projectResource.load(null);
+//		for (EObject eObject : projectResource.getContents()){
+//			if (eObject instanceof Project){
+//				return (Project)eObject;
+//			}
+//		}
 		return null;
 	}
 	

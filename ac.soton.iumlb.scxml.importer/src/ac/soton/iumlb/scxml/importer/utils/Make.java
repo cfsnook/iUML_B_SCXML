@@ -32,7 +32,7 @@ import org.eventb.emf.core.machine.Parameter;
 import org.eventb.emf.core.machine.Variable;
 import org.eventb.emf.core.machine.Witness;
 
-import ac.soton.eventb.emf.diagrams.importExport.TranslationDescriptor;
+import ac.soton.emf.translator.TranslationDescriptor;
 import ac.soton.eventb.statemachines.AbstractNode;
 import ac.soton.eventb.statemachines.Final;
 import ac.soton.eventb.statemachines.Initial;
