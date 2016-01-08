@@ -7,7 +7,7 @@ Bundle-ClassPath: .
 Bundle-Activator: org.eclipse.sirius.tests.sample.scxml.provider.ScxmlEditPlugin$Implementation
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: org.eclipse.sirius.tests.sample.scxml.provider
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.sirius.tests.sample.scxml;visibility:=reexport,

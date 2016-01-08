@@ -18,5 +18,5 @@ Require-Bundle: org.eclipse.core.runtime;bundle-version="[3.10.0,4.0.0)",
  ac.soton.emf.translator;bundle-version="[0.0.0,1.0.0)",
  ac.soton.eventb.statemachines;bundle-version="[3.1.0,4.0.0)"
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Vendor: %Bundle-Vendor
