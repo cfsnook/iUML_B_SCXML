@@ -2,7 +2,7 @@
 <feature
       id="ac.soton.iumlb.scxml.feature"
       label="%featureName"
-      version="0.0.1"
+      version="0.0.2"
       provider-name="%providerName"
       plugin="ac.soton.iumlb.branding">
 
@@ -26,6 +26,7 @@
       <import plugin="org.eclipse.emf.workspace" version="1.5.0" match="compatible"/>
       <import plugin="org.eclipse.gmf.runtime.diagram.ui.resources.editor" version="1.4.0" match="compatible"/>
       <import plugin="org.eclipse.gmf.runtime.diagram.ui" version="1.5.0" match="compatible"/>
+      <import plugin="org.eclipse.core.resources" version="3.9.1" match="compatible"/>
       <import plugin="org.eclipse.osgi" version="3.10.0" match="compatible"/>
       <import plugin="org.eclipse.ui.workbench" version="3.106.0" match="compatible"/>
       <import plugin="org.eclipse.emf.ecore" version="2.10.0" match="compatible"/>
@@ -37,9 +38,13 @@
       <import plugin="ac.soton.eventb.emf.core.extension.navigator" version="4.1.0" match="compatible"/>
       <import plugin="ac.soton.eventb.emf.diagrams" version="4.0.0" match="compatible"/>
       <import plugin="ac.soton.eventb.statemachines" version="3.1.0" match="compatible"/>
-      <import plugin="org.eclipse.emf.ecore.xmi"/>
-      <import plugin="org.eclipse.emf.edit.ui"/>
-      <import plugin="org.eclipse.core.resources" version="3.9.1" match="compatible"/>
+      <import plugin="org.eclipse.emf.ecore" version="2.10.2" match="compatible"/>
+      <import plugin="org.eclipse.emf.ecore.xmi" version="2.10.2" match="compatible"/>
+      <import plugin="org.eclipse.sirius.tests.sample.scxml" version="3.1.1" match="compatible"/>
+      <import plugin="org.eclipse.emf.edit" version="2.10.1" match="compatible"/>
+      <import plugin="org.eclipse.sirius.tests.sample.scxml.edit" version="1.0.1" match="compatible"/>
+      <import plugin="org.eclipse.emf.edit.ui" version="2.10.2" match="compatible"/>
+      <import plugin="org.eclipse.ui.ide" version="3.10.2" match="compatible"/>
    </requires>
 
    <plugin
