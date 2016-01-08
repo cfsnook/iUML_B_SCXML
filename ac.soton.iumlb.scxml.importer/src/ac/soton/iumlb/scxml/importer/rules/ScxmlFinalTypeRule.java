@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2015 University of Southampton.
+ *  Copyright (c) 2016 University of Southampton.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -32,6 +32,7 @@ import ac.soton.eventb.statemachines.Statemachine;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.eventb.statemachines.Transition;
 import ac.soton.iumlb.scxml.importer.utils.Make;
+import ac.soton.iumlb.scxml.importer.utils.Utils;
 
 public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRule {
 
@@ -58,10 +59,10 @@ public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRu
 		((ScxmlFinalType) sourceElement).getId();
 		String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
 		statemachines.clear();
-		int refinementLevel = getRefinementLevel(sourceElement);
-		int depth = getRefinementDepth(sourceElement);
+		int refinementLevel = Utils.getRefinementLevel(sourceElement);
+		int depth = Utils.getRefinementDepth(sourceElement);
 		for (int i=refinementLevel; i<=depth; i++){
-			Machine m = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE, getMachineName(scxmlContainer,i));
+			Machine m = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
 			Statemachine sm = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
 			if (sm==null) return false;
 			statemachines.add(sm);			
@@ -82,7 +83,7 @@ public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRu
 			if (state==null){
 				state = (State)Make.state(scxmlFinal.getId(), "");
 			}else{
-				state = (State) refine(scxmlContainer, state);
+				state = (State) Utils.refine(scxmlContainer, state);
 			}
 
 			sm.getNodes().add(state);
@@ -96,11 +97,11 @@ public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRu
 			// add events to tr.elaborates
 			Machine machine = (Machine) sm.getContaining(MachinePackage.Literals.MACHINE);
 			List<String> eventNames = new ArrayList<String>();
-			for (Event ev : findOutgoingEvents(scxmlFinal, machine, generatedElements)){
+			for (Event ev : Utils.findOutgoingEvents(scxmlFinal, machine, generatedElements)){
 				eventNames.add(ev.getName());
 			}
 			for (String eventName: eventNames){
-				Event ev = getOrCreateEvent(machine, generatedElements, eventName);
+				Event ev = Utils.getOrCreateEvent(machine, generatedElements, eventName);
 				tr.getElaborates().add(ev);
 			}
 		}

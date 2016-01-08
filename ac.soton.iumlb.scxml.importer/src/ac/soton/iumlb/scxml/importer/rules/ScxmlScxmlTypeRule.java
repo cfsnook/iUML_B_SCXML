@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2015 University of Southampton.
+ *  Copyright (c) 2016 University of Southampton.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -27,23 +27,23 @@ import ac.soton.emf.translator.TranslationDescriptor;
 import ac.soton.eventb.emf.core.extension.navigator.refiner.AbstractElementRefiner;
 import ac.soton.eventb.emf.core.extension.navigator.refiner.ElementRefinerRegistry;
 import ac.soton.eventb.statemachines.Statemachine;
-import ac.soton.iumlb.scxml.importer.utils.Find;
 import ac.soton.iumlb.scxml.importer.utils.Make;
+import ac.soton.iumlb.scxml.importer.utils.Utils;
 
 public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRule {
 			
 	@Override
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
-		int depth = getRefinementDepth(sourceElement);
+		int depth = Utils.getRefinementDepth(sourceElement);
 		
 		ScxmlScxmlType scxml = (ScxmlScxmlType)sourceElement;
 		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		String fileName = scxml.eResource().getURI().toPlatformString(true);
 		String statechartName = scxml.getName();
-		Project project = Find.project(sourceElement);
+		Project project = Utils.findProject(sourceElement);
 
 		//String abstractMachineName = statechartName + (depth>0? "_0" : "");
-		Machine machine =  (Machine) Make.machine(getMachineName(scxml,0), "(generated from SCXML file: "+fileName+")");
+		Machine machine =  (Machine) Make.machine(Utils.getMachineName(scxml,0), "(generated from SCXML file: "+fileName+")");
 		ret.add(Make.descriptor(project, components, machine ,1));
 		
 		Event initialisation = (Event) Make.event("INITIALISATION");

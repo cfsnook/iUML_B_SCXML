@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2015 University of Southampton.
+ *  Copyright (c) 2016 University of Southampton.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -28,6 +28,7 @@ import ac.soton.eventb.statemachines.State;
 import ac.soton.eventb.statemachines.Statemachine;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.iumlb.scxml.importer.utils.Make;
+import ac.soton.iumlb.scxml.importer.utils.Utils;
 
 public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implements IRule {
 
@@ -56,10 +57,10 @@ public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implemen
 	@Override
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> translatedElements) throws Exception  {
 		statemachines.clear();
-		int refinementLevel = getRefinementLevel(sourceElement.eContainer()); //refinement level is from the parent, not this ScxmlState. 
-		int depth = getRefinementDepth(sourceElement);
+		int refinementLevel = Utils.getRefinementLevel(sourceElement.eContainer()); //refinement level is from the parent, not this ScxmlState. 
+		int depth = Utils.getRefinementDepth(sourceElement);
 		for (int i=refinementLevel; i<=depth; i++){
-			Machine m = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE, getMachineName(scxmlContainer,i));
+			Machine m = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
 			String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
 			Statemachine psm = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
 			if (psm==null) return false;
@@ -79,7 +80,7 @@ public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implemen
 			if (state==null){
 				state = (State)Make.state(scxmlState.getId(), "");
 			}else{
-				state = (State) refine(scxmlContainer, state);
+				state = (State) Utils.refine(scxmlContainer, state);
 			}
 			psm.getNodes().add(state);
 		}

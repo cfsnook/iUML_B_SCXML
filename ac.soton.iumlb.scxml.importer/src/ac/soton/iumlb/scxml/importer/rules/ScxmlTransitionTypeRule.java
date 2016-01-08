@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2015 University of Southampton.
+ *  Copyright (c) 2016 University of Southampton.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -34,6 +34,7 @@ import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.eventb.statemachines.Transition;
 import ac.soton.iumlb.scxml.importer.strings.Strings;
 import ac.soton.iumlb.scxml.importer.utils.Make;
+import ac.soton.iumlb.scxml.importer.utils.Utils;
 
 /**
  * This rules translates SCXML transitions, excluding initial transitions,
@@ -64,13 +65,13 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 		ScxmlStateType stateContainer = (ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, sourceElement.eContainer().eContainer());
 		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
 		refinements.clear();
-		int refinementLevel = getRefinementLevel(sourceElement);
-		int depth = getRefinementDepth(sourceElement);		
+		int refinementLevel = Utils.getRefinementLevel(sourceElement);
+		int depth = Utils.getRefinementDepth(sourceElement);		
 		String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
 		
 		for (int i=refinementLevel; i<=depth; i++){
 			Refinement ref = new Refinement();
-			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, getMachineName(scxmlContainer,i));
+			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
 			ref.machine = m;
 			if (ref.machine == null) 
 				return false;
@@ -109,8 +110,8 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			}else{
 				abstractMachine=null;
 			}
-			for (String eventName: getEventNames(scxmlTransition, ref.machine, translatedElements)){
-				Event ev = getOrCreateEvent(ref.machine, translatedElements, eventName);
+			for (String eventName: Utils.getEventNames(scxmlTransition, ref.machine, translatedElements)){
+				Event ev = Utils.getOrCreateEvent(ref.machine, translatedElements, eventName);
 				if (abstractMachine!=null){
 					Event refinedEvent = (Event) Find.element(abstractMachine, abstractMachine, events, MachinePackage.Literals.EVENT, eventName);
 					if (refinedEvent!=null && !ev.getRefinesNames().contains(eventName)){

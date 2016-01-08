@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2015 University of Southampton.
+ *  Copyright (c) 2016 University of Southampton.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -29,6 +29,7 @@ import ac.soton.eventb.statemachines.Statemachine;
 import ac.soton.eventb.statemachines.StatemachineOwner;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.iumlb.scxml.importer.utils.Make;
+import ac.soton.iumlb.scxml.importer.utils.Utils;
 
 public class ScxmlStateType2StatemachineRule extends AbstractSCXMLImporterRule implements IRule {
 
@@ -54,8 +55,8 @@ public class ScxmlStateType2StatemachineRule extends AbstractSCXMLImporterRule i
 	@Override
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> translatedElements) throws Exception  {
 		smOwners.clear();
-		int refinementLevel = getRefinementLevel(sourceElement);
-		int depth = getRefinementDepth(sourceElement);
+		int refinementLevel = Utils.getRefinementLevel(sourceElement);
+		int depth = Utils.getRefinementDepth(sourceElement);
 		String smOwnerName = null;
 		if (sourceElement.eContainer().eClass() ==ScxmlPackage.Literals.SCXML_PARALLEL_TYPE){
 			smOwnerName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId();
@@ -63,7 +64,7 @@ public class ScxmlStateType2StatemachineRule extends AbstractSCXMLImporterRule i
 			smOwnerName = ((ScxmlStateType)sourceElement).getId();
 		}
 		for (int i=refinementLevel; i<=depth; i++){
-			Machine m = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE, getMachineName(scxmlContainer,i));
+			Machine m = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
 			StatemachineOwner smo = (StatemachineOwner) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE_OWNER, smOwnerName);
 			if (smo==null) 
 				return false;
@@ -87,7 +88,7 @@ public class ScxmlStateType2StatemachineRule extends AbstractSCXMLImporterRule i
 					statemachine.getNodes().add(initialState);
 				}
 			}else{
-				statemachine = (Statemachine) refine(scxmlContainer, statemachine);
+				statemachine = (Statemachine) Utils.refine(scxmlContainer, statemachine);
 			}
 			owner.getStatemachines().add(statemachine);
 		}

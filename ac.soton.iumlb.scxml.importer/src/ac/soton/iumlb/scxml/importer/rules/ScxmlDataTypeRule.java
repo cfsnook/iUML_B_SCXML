@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2015 University of Southampton.
+ *  Copyright (c) 2016 University of Southampton.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -34,6 +34,7 @@ import ac.soton.eventb.statemachines.State;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.iumlb.scxml.importer.strings.Strings;
 import ac.soton.iumlb.scxml.importer.utils.Make;
+import ac.soton.iumlb.scxml.importer.utils.Utils;
 
 public class ScxmlDataTypeRule extends AbstractSCXMLImporterRule implements IRule {
 
@@ -58,12 +59,12 @@ public class ScxmlDataTypeRule extends AbstractSCXMLImporterRule implements IRul
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
 		ScxmlDataType scxml = (ScxmlDataType)sourceElement;
 		refinements.clear();
-		int refinementLevel = getRefinementLevel(sourceElement);
-		int depth = getRefinementDepth(sourceElement);		
+		int refinementLevel = Utils.getRefinementLevel(sourceElement);
+		int depth = Utils.getRefinementDepth(sourceElement);		
 		
 		for (int i=refinementLevel; i<=depth; i++){
 			Refinement ref = new Refinement();
-			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, getMachineName(scxmlContainer,i));
+			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
 			ref.machine = m;
 			if (ref.machine == null) 
 				return false;
