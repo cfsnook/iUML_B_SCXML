@@ -44,7 +44,7 @@
    </requires>
 
    <plugin
-         id="ac.soton.eventb.emf.diagrams.importExport"
+         id="ac.soton.emf.translator"
          download-size="0"
          install-size="0"
          version="0.0.0"
