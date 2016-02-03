@@ -21,7 +21,9 @@ import java.util.Map;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.emf.ecore.util.FeatureMap;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlDataType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlInitialType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlLogType;
@@ -290,10 +292,15 @@ public class Utils {
 	 * @return
 	 */
 	public static int getRefinementLevel(EObject scxmlElement){
-		List<EObject> dataTypes = getData(scxmlElement);		
-		for (EObject data : dataTypes){
-			if ("Refinement".equals(((ScxmlDataType)data).getId())){
-				return Integer.parseInt(((ScxmlDataType)data).getExpr());
+		EStructuralFeature anyAttributeFeature  = scxmlElement.eClass().getEStructuralFeature("anyAttribute");
+		FeatureMap fm = (FeatureMap) scxmlElement.eGet(anyAttributeFeature);
+		for (int i=0; i< fm.size(); i++){
+			EStructuralFeature sf = fm.getEStructuralFeature(i);
+			if ("refinement".equals(sf.getName())){
+				Object v = fm.getValue(i);
+				if (v instanceof String){
+					return Integer.parseInt((String)v);
+				}
 			}
 		}
 		if (scxmlElement.eContainer()==null){
@@ -302,6 +309,20 @@ public class Utils {
 			return getRefinementLevel(scxmlElement.eContainer());
 		}
 	}
+		
+		
+//		List<EObject> dataTypes = getData(scxmlElement);		
+//		for (EObject data : dataTypes){
+//			if ("Refinement".equals(((ScxmlDataType)data).getId())){
+//				return Integer.parseInt(((ScxmlDataType)data).getExpr());
+//			}
+//		}
+//		if (scxmlElement.eContainer()==null){
+//			return 0;
+//		}else{
+//			return getRefinementLevel(scxmlElement.eContainer());
+//		}
+//	}
 	
 	/**
 	 * convenience method that returns a list of data elements that are in the dataModel
