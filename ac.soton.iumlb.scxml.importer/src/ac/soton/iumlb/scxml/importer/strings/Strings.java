@@ -87,11 +87,16 @@ public class Strings {
 	}
 	
 	public static String INV_PREDICATE(String anticedent, ScxmlDataType scxml) {
-		String predicate = convertLocation(convertBoolVals(convertDoubleEquals(scxml.getExpr())));
+		String predicate = INV_PREDICATE(scxml.getExpr());
 		if (anticedent != null){
 			predicate = anticedent + "("+ predicate+ ")";
 		}
 		return predicate;
+	}
+	
+	public static String INV_PREDICATE(String predicate) {
+		String pred = convertLocation(convertBoolVals(convertDoubleEquals(predicate)));
+		return pred;
 	}
 	
 	////
