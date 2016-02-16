@@ -18,6 +18,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
+import org.eventb.emf.core.machine.Invariant;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
 
@@ -27,6 +28,8 @@ import ac.soton.emf.translator.utils.Find;
 import ac.soton.eventb.statemachines.State;
 import ac.soton.eventb.statemachines.Statemachine;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
+import ac.soton.iumlb.scxml.importer.strings.Strings;
+import ac.soton.iumlb.scxml.importer.utils.IumlbScxmlAdapter;
 import ac.soton.iumlb.scxml.importer.utils.Make;
 import ac.soton.iumlb.scxml.importer.utils.Utils;
 
@@ -83,6 +86,18 @@ public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implemen
 				state = (State) Utils.refine(scxmlContainer, state);
 			}
 			psm.getNodes().add(state);
+			
+			if (state.getRefines()==null){
+				List<IumlbScxmlAdapter> invs = new IumlbScxmlAdapter(scxmlState).getinvariants();
+				for (IumlbScxmlAdapter inv : invs){
+					String name = (String)inv.getAnyAttributeValue("name");
+					String derived = (String)inv.getAnyAttributeValue("derived");
+					String predicate = (String)inv.getAnyAttributeValue("predicate");
+					String comment = (String)inv.getAnyAttributeValue("comment");
+					Invariant invariant =  (Invariant) Make.invariant(name,Boolean.parseBoolean(derived),Strings.INV_PREDICATE(predicate),comment); 
+					state.getInvariants().add(invariant);
+				}
+			}
 		}
 		
 		return Collections.emptyList();

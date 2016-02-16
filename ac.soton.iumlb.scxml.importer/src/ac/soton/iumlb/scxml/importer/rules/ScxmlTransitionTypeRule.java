@@ -33,6 +33,7 @@ import ac.soton.eventb.statemachines.Statemachine;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.eventb.statemachines.Transition;
 import ac.soton.iumlb.scxml.importer.strings.Strings;
+import ac.soton.iumlb.scxml.importer.utils.IumlbScxmlAdapter;
 import ac.soton.iumlb.scxml.importer.utils.Make;
 import ac.soton.iumlb.scxml.importer.utils.Utils;
 
@@ -122,12 +123,23 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 				transition.getElaborates().add(ev);
 				guardLabel=guardLabel+"_"+ev.getName();
 			}
-			//cond -> guard
-			String cond = scxmlTransition.getCond();
-			if (cond!=null && cond.length()>0) {
-				Guard guard = (Guard) Make.guard(guardLabel, false, Strings.COND_GUARD(cond), "");
+//			//cond -> guard
+//			String cond = scxmlTransition.getCond();
+//			if (cond!=null && cond.length()>0) {
+//				Guard guard = (Guard) Make.guard(guardLabel, false, Strings.COND_GUARD(cond), "");
+//				transition.getGuards().add(guard);
+//			}
+
+			List<IumlbScxmlAdapter> gds = new IumlbScxmlAdapter(scxmlTransition).getGuards();
+			for (IumlbScxmlAdapter gd : gds){
+				String name = (String)gd.getAnyAttributeValue("name");
+				String derived = (String)gd.getAnyAttributeValue("derived");
+				String predicate = (String)gd.getAnyAttributeValue("predicate");
+				String comment = (String)gd.getAnyAttributeValue("comment");
+				Guard guard =  (Guard) Make.guard(name,Boolean.parseBoolean(derived),Strings.INV_PREDICATE(predicate),comment); 
 				transition.getGuards().add(guard);
 			}
+
 		}
 		return Collections.emptyList();
 	}

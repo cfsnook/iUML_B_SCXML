@@ -21,10 +21,8 @@ import java.util.Map;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.emf.ecore.util.FeatureMap;
-import org.eclipse.sirius.tests.sample.scxml.ScxmlDataType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlInitialType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlLogType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
@@ -272,19 +270,17 @@ public class Utils {
 	public static int getRefinementDepth(EObject scxmlElement) {
 		int depth = 0;
 		ScxmlScxmlType scxml = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlElement);
-		List<EObject> dataTypes = Find.eAllContents(scxml, ScxmlPackage.Literals.SCXML_DATA_TYPE);
-		for (EObject dataType : dataTypes){
-			if ("Refinement".equals(((ScxmlDataType)dataType).getId())){
-				int ref = Integer.parseInt(((ScxmlDataType)dataType).getExpr());
-				depth = ref>depth? ref : depth;
-			}
+		List<EObject> eObjects = Find.eAllContents(scxml, EcorePackage.Literals.EOBJECT);
+		for (EObject eObject : eObjects){
+			int ref = new IumlbScxmlAdapter(eObject).getRefinementLevel();
+			depth = ref>depth? ref : depth;
 		}
 		return depth;
 	}
 	
 	/**
 	 * Returns the starting refinement level for this scxml element
-	 * This is given in a 'Refinement' data item in the datamodel attached to the element,
+	 * This is given in a 'refinement' iumlb:attribute attached to the element,
 	 * or, if none, the refinement level of its parent,
 	 * or, if none, 0
 	 * 
@@ -292,37 +288,8 @@ public class Utils {
 	 * @return
 	 */
 	public static int getRefinementLevel(EObject scxmlElement){
-		EStructuralFeature anyAttributeFeature  = scxmlElement.eClass().getEStructuralFeature("anyAttribute");
-		FeatureMap fm = (FeatureMap) scxmlElement.eGet(anyAttributeFeature);
-		for (int i=0; i< fm.size(); i++){
-			EStructuralFeature sf = fm.getEStructuralFeature(i);
-			if ("refinement".equals(sf.getName())){
-				Object v = fm.getValue(i);
-				if (v instanceof String){
-					return Integer.parseInt((String)v);
-				}
-			}
-		}
-		if (scxmlElement.eContainer()==null){
-			return 0;
-		}else{
-			return getRefinementLevel(scxmlElement.eContainer());
-		}
+		return new IumlbScxmlAdapter(scxmlElement).getRefinementLevel();
 	}
-		
-		
-//		List<EObject> dataTypes = getData(scxmlElement);		
-//		for (EObject data : dataTypes){
-//			if ("Refinement".equals(((ScxmlDataType)data).getId())){
-//				return Integer.parseInt(((ScxmlDataType)data).getExpr());
-//			}
-//		}
-//		if (scxmlElement.eContainer()==null){
-//			return 0;
-//		}else{
-//			return getRefinementLevel(scxmlElement.eContainer());
-//		}
-//	}
 	
 	/**
 	 * convenience method that returns a list of data elements that are in the dataModel
