@@ -47,6 +47,7 @@ import ac.soton.iumlb.scxml.importer.utils.Utils;
 public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implements IRule {
 
 	private class Refinement {
+		private int level = 0;
 		private Machine machine = null;
 		private Statemachine statemachine = null;
 		private AbstractNode source = null;
@@ -66,12 +67,13 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 		ScxmlStateType stateContainer = (ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, sourceElement.eContainer().eContainer());
 		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
 		refinements.clear();
-		int refinementLevel = Utils.getRefinementLevel(sourceElement);
+		int refinementLevel = Utils.getRefinementLevel(stateContainer==null? scxmlContainer : stateContainer);
 		int depth = Utils.getRefinementDepth(sourceElement);		
 		String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
 		
 		for (int i=refinementLevel; i<=depth; i++){
 			Refinement ref = new Refinement();
+			ref.level = i;
 			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
 			ref.machine = m;
 			if (ref.machine == null) 
@@ -102,9 +104,9 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 		ScxmlTransitionType scxmlTransition = ((ScxmlTransitionType) sourceElement);
 		Machine abstractMachine = null;
 		for (Refinement ref : refinements){
+			
 			Transition transition = Make.transition(ref.source, ref.target, "");
 			ref.statemachine.getTransitions().add(transition);
-			String guardLabel = "cond";  // may be used in cond guard later
 			if (ref.machine.getRefinesNames().size()>0){
 				abstractMachine = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE,
 						ref.machine.getRefinesNames().get(0));
@@ -121,7 +123,6 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 					}
 				}
 				transition.getElaborates().add(ev);
-				guardLabel=guardLabel+"_"+ev.getName();
 			}
 //			//cond -> guard
 //			String cond = scxmlTransition.getCond();
@@ -132,12 +133,15 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 
 			List<IumlbScxmlAdapter> gds = new IumlbScxmlAdapter(scxmlTransition).getGuards();
 			for (IumlbScxmlAdapter gd : gds){
-				String name = (String)gd.getAnyAttributeValue("name");
-				String derived = (String)gd.getAnyAttributeValue("derived");
-				String predicate = (String)gd.getAnyAttributeValue("predicate");
-				String comment = (String)gd.getAnyAttributeValue("comment");
-				Guard guard =  (Guard) Make.guard(name,Boolean.parseBoolean(derived),Strings.INV_PREDICATE(predicate),comment); 
-				transition.getGuards().add(guard);
+				int rl = gd.getRefinementLevel();
+				if (rl <= ref.level){
+					String name = (String)gd.getAnyAttributeValue("name");
+					String derived = (String)gd.getAnyAttributeValue("derived");
+					String predicate = (String)gd.getAnyAttributeValue("predicate");
+					String comment = (String)gd.getAnyAttributeValue("comment");
+					Guard guard =  (Guard) Make.guard(name,Boolean.parseBoolean(derived),Strings.INV_PREDICATE(predicate),comment); 
+					transition.getGuards().add(guard);
+				}
 			}
 
 		}
