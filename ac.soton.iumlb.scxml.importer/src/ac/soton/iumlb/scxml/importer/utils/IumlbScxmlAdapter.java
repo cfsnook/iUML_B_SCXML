@@ -33,9 +33,17 @@ public class IumlbScxmlAdapter {
 	   */
 	  public IumlbScxmlAdapter(EObject target)
 	  {
-	    this.target = target;
+	    adapt(target);
 	  }
 
+	  /**
+	   * makes this instance adapt the given target
+	   * @param target
+	   */
+	  public void adapt(EObject target){
+		    this.target = target;
+	  }
+	  
 	 /**
 	  * returns the value of the attribute with the given name contained in
 	  * the anyAttribute feature map...
@@ -46,6 +54,7 @@ public class IumlbScxmlAdapter {
 	  
 	  public Object getAnyAttributeValue(String attributeName){
 			EStructuralFeature anyAttributeFeature  = target.eClass().getEStructuralFeature("anyAttribute");
+			if (anyAttributeFeature==null) return null;
 			FeatureMap fm = (FeatureMap) target.eGet(anyAttributeFeature);
 			for (int i=0; i< fm.size(); i++){
 				EStructuralFeature sf = fm.getEStructuralFeature(i);
