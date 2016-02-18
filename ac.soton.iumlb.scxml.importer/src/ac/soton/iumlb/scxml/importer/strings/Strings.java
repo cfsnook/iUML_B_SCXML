@@ -63,10 +63,10 @@ public class Strings {
 	}
 
 	public static String TYPE_PREDICATE;
-	public static String TYPE_PREDICATE(ScxmlDataType scxml) {
+	public static String TYPE_PREDICATE(String id, String type) {
 		return bind(TYPE_PREDICATE,
-				convertLocation(scxml.getId()),
-				convertType(scxml.getExpr())
+				convertLocation(id),
+				type
 				);
 	}
 
@@ -102,10 +102,11 @@ public class Strings {
 	////
 	
 	private static String convertDoubleEquals(String expr) {
-		return expr.replaceAll("==", "=");
+		return expr==null? "<null>": expr.replaceAll("==", "=");
 	}
 
 	private static String removeBrackets(String expr) {
+		if (expr==null) return "<null>";
 		if (expr.startsWith("[") && expr.endsWith("]")) {
 			return expr.substring(1, expr.length()-1);
 		}else {
@@ -114,19 +115,14 @@ public class Strings {
 	}
 
 	private static String convertBoolVals(String expr) {
-		return expr.replaceAll("\\btrue\\b", "TRUE").replaceAll("\\bfalse\\b", "FALSE");
+		return expr==null? "<null>": expr.replaceAll("\\btrue\\b", "TRUE").replaceAll("\\bfalse\\b", "FALSE");
 	}
 
 	private static String convertLocation(String location){
-		return location.replaceAll("\\.", "_");
+		return location==null? "<null>": location.replaceAll("\\.", "_");
 	}
 	
-	private static String convertType(String expr) {
-		if ("true".equals(expr) || "false".equals(expr)){
-			return "BOOL";
-		}
-		return expr;
-	}
+
 
 
 
