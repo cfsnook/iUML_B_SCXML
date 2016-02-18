@@ -23,6 +23,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.sirius.tests.sample.scxml.ScxmlDataType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlInitialType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlLogType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
@@ -40,6 +41,7 @@ import ac.soton.emf.translator.TranslationDescriptor;
 import ac.soton.emf.translator.utils.Find;
 import ac.soton.eventb.emf.core.extension.navigator.refiner.AbstractElementRefiner;
 import ac.soton.eventb.emf.core.extension.navigator.refiner.ElementRefinerRegistry;
+import ac.soton.iumlb.scxml.importer.strings.Strings;
 
 /**
  * <p> 
@@ -193,7 +195,7 @@ public class Utils {
 	 * 
 	 * the event names are obtained (cumulatively) by the following methods:
 	 * 
-	 * a) the transition has a trigger event
+	 * a) the transition has iuml-b:label attributes
 	 * b) the transition has log labels
 	 * c) the transition's source is an initial state (see below)
 	 * d) if none of the above provide any labels a default 'source_target' format is used
@@ -210,12 +212,21 @@ public class Utils {
 	public static List<String> getEventNames(ScxmlTransitionType scxmlTransition, Machine machine, List<TranslationDescriptor> generatedElements){
 		List<String> eventNames = new ArrayList<String>();
 //		String eventName = getUniqueName(scxmlTransition);
+	
+// NO LONGER USED
+//		//add event name if any
+//		String eventName = scxmlTransition.getEvent();
+//		if (eventName != null && eventName.length()>0) {
+//			eventNames.add(eventName);
+//		}
 		
-		//add event name if any
-		String eventName = scxmlTransition.getEvent();
-		if (eventName != null && eventName.length()>0) {
-			eventNames.add(eventName);
+		//add iuml-b labels
+		IumlbScxmlAdapter adapter = new IumlbScxmlAdapter(scxmlTransition);
+		Object label = adapter.getAnyAttributeValue("label");
+		if (label instanceof String){
+			eventNames.add((String) label);
 		}
+		
 		
 		//add log labels if any
 		for (ScxmlLogType log : scxmlTransition.getLog()){
@@ -332,6 +343,25 @@ public class Utils {
 	 */
 	public static String getMachineName(ScxmlScxmlType scxmlContainer, int refinementLevel) {
 		return scxmlContainer.getName()+"_"+refinementLevel;
+	}
+
+
+	/**
+	 * gets the type set of an ScxmlData item
+	 * @param scxml
+	 * @return
+	 */
+	public static String getType(ScxmlDataType scxml) {
+		String type = (String) new IumlbScxmlAdapter(scxml).getAnyAttributeValue("type");
+		if (type==null || type.length()==0) {
+			//fallback if no iumlb:type attribute provided
+			String expr = scxml.getExpr();
+			if (expr==null) type = "<null>";
+			if ("true".equals(expr) || "false".equals(expr)){
+				type = "BOOL";
+			}
+		}
+		return Strings.TYPE_PREDICATE(scxml.getId(),type);
 	}
 
 }
