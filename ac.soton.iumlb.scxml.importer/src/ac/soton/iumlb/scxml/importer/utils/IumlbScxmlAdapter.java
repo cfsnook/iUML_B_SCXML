@@ -109,6 +109,27 @@ public class IumlbScxmlAdapter {
 			}
 		}
 	}
+	
+	/**
+	 * Returns the starting refinement level for this SCXML element
+	 * This is given in a 'refinement' iumlb:attribute attached to the element,
+	 * if none, or the attribute string doesn't parse as an int, returns null.
+	 * 
+	 * @param scxmlElement
+	 * @return
+	 */
+	public int getBasicRefinementLevel(){		
+		Object level = getAnyAttributeValue("refinement");
+		if (level instanceof String) {
+			try {
+				return Integer.parseInt((String)level);
+			}catch (Exception e){
+				return -1;
+			}
+		}else{
+			return -1;
+		}
+	}
 
 	
 	public List<IumlbScxmlAdapter> getinvariants() {		
