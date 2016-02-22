@@ -36,7 +36,11 @@ import ac.soton.iumlb.scxml.importer.utils.Utils;
 public class ScxmlOnentryTypeRule extends AbstractSCXMLImporterRule implements IRule {
 
 	ScxmlStateType stateContainer=null;
-	List<State> states = new ArrayList<State>();
+	private List<RefinementLevelDescriptor> refinements = new ArrayList<RefinementLevelDescriptor>();
+	private class RefinementLevelDescriptor {
+		private int level = -1;
+		private State state = null;	
+	}
 	
 	public boolean enabled(final EObject sourceElement) throws Exception  {
 		stateContainer = (ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, sourceElement.eContainer());
@@ -46,26 +50,32 @@ public class ScxmlOnentryTypeRule extends AbstractSCXMLImporterRule implements I
 	@Override
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
 		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
-		states.clear();
+		refinements.clear();
 		int refinementLevel = Utils.getRefinementLevel(sourceElement);
 		int depth = Utils.getRefinementDepth(sourceElement);
 		for (int i=refinementLevel; i<=depth; i++){
 			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
 			State st =  (State) Find.element(m, null, nodes, StatemachinesPackage.Literals.STATE, stateContainer.getId());
 			if (st==null) return false;
-			states.add(st);
+			
+			RefinementLevelDescriptor ref = new RefinementLevelDescriptor();
+			ref.level = i;
+			ref.state = st;
+			refinements.add(ref);
 		}
 		return true;
 	}
 
 	@Override
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
-		for (State st : states){
+		for (RefinementLevelDescriptor ref : refinements){ 
 			int i=0;
 			for (ScxmlAssignType assign : ((ScxmlOnentryType)sourceElement).getAssign()){
-				Action action = (Action) Make.action(stateContainer.getId()+"_onentry_"+i, Strings.ASSIGN_ACTION(assign));
-				st.getEntryActions().add(action);
-				i++;
+				if(Utils.getRefinementLevel(assign) <= ref.level){
+					Action action = (Action) Make.action(stateContainer.getId()+"_onentry_"+i, Strings.ASSIGN_ACTION(assign));
+					ref.state.getEntryActions().add(action);
+					i++;
+				}
 			}	
 		}
 		return Collections.emptyList();
