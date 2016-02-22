@@ -15,11 +15,13 @@ import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.sirius.tests.sample.scxml.ScxmlAssignType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlInitialType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlTransitionType;
+import org.eventb.emf.core.machine.Action;
 import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.core.machine.Guard;
 import org.eventb.emf.core.machine.Machine;
@@ -133,7 +135,7 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 
 			List<IumlbScxmlAdapter> gds = new IumlbScxmlAdapter(scxmlTransition).getGuards();
 			for (IumlbScxmlAdapter gd : gds){
-				int rl = gd.getRefinementLevel();
+				int rl = gd.getBasicRefinementLevel();
 				if (rl <= ref.level){
 					String name = (String)gd.getAnyAttributeValue("name");
 					String derived = (String)gd.getAnyAttributeValue("derived");
@@ -143,7 +145,14 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 					transition.getGuards().add(guard);
 				}
 			}
-
+			int i=0;
+			for (ScxmlAssignType assign : scxmlTransition.getAssign()){
+				if(new IumlbScxmlAdapter(assign).getBasicRefinementLevel() <= ref.level){
+					Action action = (Action) Make.action(transition.getLabel()+"_act_"+i, Strings.ASSIGN_ACTION(assign));
+					transition.getActions().add(action);
+					i++;
+				}
+			}	
 		}
 		return Collections.emptyList();
 	}
