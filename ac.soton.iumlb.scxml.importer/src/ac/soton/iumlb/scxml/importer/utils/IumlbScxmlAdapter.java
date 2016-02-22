@@ -113,7 +113,7 @@ public class IumlbScxmlAdapter {
 	/**
 	 * Returns the starting refinement level for this SCXML element
 	 * This is given in a 'refinement' iumlb:attribute attached to the element,
-	 * if none, or the attribute string doesn't parse as an int, returns null.
+	 * if none, or the attribute string doesn't parse as an int, returns -1.
 	 * 
 	 * @param scxmlElement
 	 * @return
