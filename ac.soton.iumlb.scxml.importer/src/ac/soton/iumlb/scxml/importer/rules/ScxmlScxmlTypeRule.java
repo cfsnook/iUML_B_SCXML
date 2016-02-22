@@ -20,6 +20,7 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eventb.emf.core.Project;
 import org.eventb.emf.core.machine.Event;
+import org.eventb.emf.core.machine.Invariant;
 import org.eventb.emf.core.machine.Machine;
 
 import ac.soton.emf.translator.IRule;
@@ -27,6 +28,8 @@ import ac.soton.emf.translator.TranslationDescriptor;
 import ac.soton.eventb.emf.core.extension.navigator.refiner.AbstractElementRefiner;
 import ac.soton.eventb.emf.core.extension.navigator.refiner.ElementRefinerRegistry;
 import ac.soton.eventb.statemachines.Statemachine;
+import ac.soton.iumlb.scxml.importer.strings.Strings;
+import ac.soton.iumlb.scxml.importer.utils.IumlbScxmlAdapter;
 import ac.soton.iumlb.scxml.importer.utils.Make;
 import ac.soton.iumlb.scxml.importer.utils.Utils;
 
@@ -41,25 +44,36 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		String fileName = scxml.eResource().getURI().toPlatformString(true);
 		String statechartName = scxml.getName();
 		Project project = Utils.findProject(sourceElement);
+		Machine machine=null;
+		for (int i=0; i<=depth; i++){
+			if (i==0){
+				machine =  (Machine) Make.machine(Utils.getMachineName(scxml,0), "(generated from SCXML file: "+fileName+")");
+				ret.add(Make.descriptor(project, components, machine ,1));
+				
+				Event initialisation = (Event) Make.event("INITIALISATION");
+				machine.getEvents().add(initialisation);
 
-		//String abstractMachineName = statechartName + (depth>0? "_0" : "");
-		Machine machine =  (Machine) Make.machine(Utils.getMachineName(scxml,0), "(generated from SCXML file: "+fileName+")");
-		ret.add(Make.descriptor(project, components, machine ,1));
-		
-		Event initialisation = (Event) Make.event("INITIALISATION");
-		machine.getEvents().add(initialisation);
-		//ret.add(Make.descriptor(machine, events, initialisation ,1));
-
-		Statemachine statemachine = (Statemachine) Make.statemachine(statechartName, tkind, "");
-		machine.getExtensions().add(statemachine);
-		//ret.add(Make.descriptor(machine, extensions, statemachine, 1));
-
-		for (int i=1; i<=depth; i++){
-			Machine refinement = refine (scxml, machine, statechartName+"_"+i);
-			ret.add(Make.descriptor(project, components, refinement ,1));
-			machine = refinement;
+				Statemachine statemachine = (Statemachine) Make.statemachine(statechartName, tkind, "");
+				machine.getExtensions().add(statemachine);
+			}else{
+				machine = refine (scxml, machine, statechartName+"_"+i);
+				ret.add(Make.descriptor(project, components, machine ,1));
+			}
+			
+			List<IumlbScxmlAdapter> invs = new IumlbScxmlAdapter(scxml).getinvariants();
+			for (IumlbScxmlAdapter inv : invs){
+				int refLevel = inv.getBasicRefinementLevel();
+				if (refLevel==-1) refLevel = 0;
+				if (refLevel==i){
+					String name = (String)inv.getAnyAttributeValue("name");
+					String derived = (String)inv.getAnyAttributeValue("derived");
+					String predicate = (String)inv.getAnyAttributeValue("predicate");
+					String comment = (String)inv.getAnyAttributeValue("comment");
+					Invariant invariant =  (Invariant) Make.invariant(name,Boolean.parseBoolean(derived),Strings.INV_PREDICATE(predicate),comment); 
+					machine.getInvariants().add(invariant);
+				}
+			}
 		}
-		
 		return ret;
 	}
 

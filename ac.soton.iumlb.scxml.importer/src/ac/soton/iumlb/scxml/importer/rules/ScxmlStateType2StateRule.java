@@ -38,8 +38,12 @@ public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implemen
 
 	ScxmlScxmlType scxmlContainer=null;
 	ScxmlStateType stateContainer=null;
-	List<Statemachine> statemachines = new ArrayList<Statemachine>();
 
+	private List<RefinementLevelDescriptor> refinements = new ArrayList<RefinementLevelDescriptor>();
+	private class RefinementLevelDescriptor {
+		private int level = -1;
+		private Statemachine statemachine = null;	
+	}
 	/**
 	 * if the scxml state is contained in a parallel it does not generate a iUML-B state, otherwise, if
 	 * the scxml state is contained in another state or in a top level scxml element then it will be used to generate an iUML-B state
@@ -59,7 +63,7 @@ public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implemen
 	 */
 	@Override
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> translatedElements) throws Exception  {
-		statemachines.clear();
+		refinements.clear();
 		int refinementLevel = Utils.getRefinementLevel(sourceElement.eContainer()); //refinement level is from the parent, not this ScxmlState. 
 		int depth = Utils.getRefinementDepth(sourceElement);
 		for (int i=refinementLevel; i<=depth; i++){
@@ -67,7 +71,11 @@ public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implemen
 			String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
 			Statemachine psm = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
 			if (psm==null) return false;
-			statemachines.add(psm);
+			
+			RefinementLevelDescriptor ref = new RefinementLevelDescriptor();
+			ref.level = i;
+			ref.statemachine = psm;
+			refinements.add(ref);
 		}
 		return true;
 	}
@@ -76,10 +84,11 @@ public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implemen
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
 
 		ScxmlStateType scxmlState = (ScxmlStateType)sourceElement;
-		
+		int baseLevel = refinements.get(0).level;
 		// states translate into iUML-B states.. 
 		State state = null;
-		for (Statemachine psm : statemachines){
+		for (RefinementLevelDescriptor ref : refinements){
+			Statemachine psm = ref.statemachine;
 			if (state==null){
 				state = (State)Make.state(scxmlState.getId(), "");
 			}else{
@@ -87,9 +96,11 @@ public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implemen
 			}
 			psm.getNodes().add(state);
 			
-			if (state.getRefines()==null){
-				List<IumlbScxmlAdapter> invs = new IumlbScxmlAdapter(scxmlState).getinvariants();
-				for (IumlbScxmlAdapter inv : invs){
+			List<IumlbScxmlAdapter> invs = new IumlbScxmlAdapter(scxmlState).getinvariants();
+			for (IumlbScxmlAdapter inv : invs){
+				int refLevel = inv.getBasicRefinementLevel();
+				if (refLevel==-1) refLevel = baseLevel;
+				if (refLevel==ref.level){
 					String name = (String)inv.getAnyAttributeValue("name");
 					String derived = (String)inv.getAnyAttributeValue("derived");
 					String predicate = (String)inv.getAnyAttributeValue("predicate");

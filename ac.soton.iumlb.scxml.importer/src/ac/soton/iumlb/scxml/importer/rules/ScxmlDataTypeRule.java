@@ -39,12 +39,13 @@ import ac.soton.iumlb.scxml.importer.utils.Utils;
 public class ScxmlDataTypeRule extends AbstractSCXMLImporterRule implements IRule {
 
 	private ScxmlScxmlType scxmlContainer=null;
-	private class Refinement {
+	
+	private List<RefinementLevelDescriptor> refinements = new ArrayList<RefinementLevelDescriptor>();
+	private class RefinementLevelDescriptor {
+		//private int level = -1;
 		private Machine machine = null;
-		private Event initialisation = null;
-		private State state;	
+		private Event initialisation = null;	
 	}
-	private List<Refinement> refinements = new ArrayList<Refinement>();
 	
 	@Override
 	public boolean enabled(final EObject sourceElement) throws Exception  {
@@ -63,20 +64,21 @@ public class ScxmlDataTypeRule extends AbstractSCXMLImporterRule implements IRul
 		int depth = Utils.getRefinementDepth(sourceElement);		
 		
 		for (int i=refinementLevel; i<=depth; i++){
-			Refinement ref = new Refinement();
-			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
-			ref.machine = m;
-			if (ref.machine == null) 
-				return false;
-			ref.initialisation = (Event) Find.translatedElement(generatedElements, m, events, MachinePackage.Literals.EVENT, "INITIALISATION");
-			if (ref.initialisation == null) 
-				return false;
+			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));	
+			if (m == null)  return false;
+			Event initialisation = (Event) Find.translatedElement(generatedElements, m, events, MachinePackage.Literals.EVENT, "INITIALISATION");
+			if (initialisation == null) return false;
+			State state = null;
 			if (isOwnedByState(scxml) && i==refinementLevel){
 				String stateName = ((ScxmlStateType)Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, scxml)).getId();
-				ref.state = (State) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATE, stateName);
-				if (ref.state==null) 
-					return false;
+				state = (State) Find.translatedElement(generatedElements, null, null, StatemachinesPackage.Literals.STATE, stateName);
+				if (state==null) return false;
 			}
+			
+			RefinementLevelDescriptor ref = new RefinementLevelDescriptor();
+			//ref.level = i;
+			ref.machine = m;
+			ref.initialisation = initialisation;
 			refinements.add(ref);
 		}
 		return true;
@@ -86,35 +88,19 @@ public class ScxmlDataTypeRule extends AbstractSCXMLImporterRule implements IRul
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> generatedElements) throws Exception {
 		ScxmlDataType scxml = (ScxmlDataType)sourceElement;
 		String vname = Strings.LOCATION(scxml);
-		boolean done = false; //flag used to ensure we only create invariants once
-		for (Refinement ref : refinements){
-			if (isPredicate(scxml.getExpr())){
-				if (done == false){
-					Invariant invariant =  (Invariant) Make.invariant(vname, Strings.INV_PREDICATE(null, scxml), "");
-					if (ref.state == null){
-						ref.machine.getInvariants().add(invariant);
-					}else{
-						ref.state.getInvariants().add(invariant);
-					}
-					done=true;
-				}
-			}else{
-				Variable variable =  (Variable) Make.variable(vname, "");
-				ref.machine.getVariables().add(variable);
-				if (done == false){
-					Invariant invariant =  (Invariant) Make.invariant(vname+"_type", Strings.TYPE_PREDICATE(scxml), "");
-					ref.machine.getInvariants().add(invariant);
-					done=true;
-				}
-				Action initAction =  (Action) Make.action(vname+"_init", Strings.INIT_ACTION(scxml), "");
-				ref.initialisation.getActions().add(initAction);
+		boolean done = false; //flag used to ensure we only create type invariants once
+		for (RefinementLevelDescriptor ref : refinements){
+			Variable variable =  (Variable) Make.variable(vname, "");
+			ref.machine.getVariables().add(variable);
+			if (done == false){
+				Invariant invariant =  (Invariant) Make.invariant(vname+"_type", Utils.getType(scxml), "");
+				ref.machine.getInvariants().add(invariant);
+				done=true;
 			}
+			Action initAction =  (Action) Make.action(vname+"_init", Strings.INIT_ACTION(scxml), "");
+			ref.initialisation.getActions().add(initAction);		
 		}
 		return Collections.emptyList();
-	}
-
-	private boolean isPredicate(String expr) {
-		return expr.contains("=") || expr.contains(">") || expr.contains("<") ;
 	}
 	
 	private boolean isOwnedByState(EObject scxml){
