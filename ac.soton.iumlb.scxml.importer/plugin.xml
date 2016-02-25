@@ -1,6 +1,68 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.4"?>
 <plugin>
+
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            categoryId="ac.soton.eventb.emf.diagrams.iUMLB"
+            description="Import to iUML-B/Event-B"
+            id="ac.soton.eventb.emf.diagrams.importexport.import2iUMLB"
+            name="Import to iUML-B">
+      </command>
+   </extension>
+   
+<extension
+      name="EventB Diagrams"
+      point="org.eclipse.ui.menus">
+  <menuContribution
+        allPopups="true"
+        locationURI="toolbar:ac.soton.eventb.emf.diagrams.toolbar?after=transformations">
+     <command
+           commandId="ac.soton.eventb.emf.diagrams.importexport.import2iUMLB"
+           icon="icons/import.png"
+           label="import"
+           style="push">
+     </command>
+  </menuContribution>
+  <!--menuContribution			DOES NOT WORK
+        allPopups="false"
+        locationURI="popup">
+     <command
+           commandId="ac.soton.eventb.emf.diagrams.importexport.import2iUMLB"
+           icon="icons/import.png"
+           label="Import SCXML to iUML-B"
+           style="push">
+     </command>
+  </menuContribution-->
+
+</extension>
+
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="ac.soton.emf.translator.handler.TranslateHandler"
+            commandId="ac.soton.eventb.emf.diagrams.importexport.import2iUMLB">
+         <enabledWhen>
+            <with
+                  variable="activeEditor">
+               <instanceof
+                     value="org.eclipse.emf.edit.domain.IEditingDomainProvider">
+               </instanceof>
+            </with>
+         </enabledWhen>
+         <activeWhen>
+            <with
+                  variable="activeEditor">
+               <instanceof
+                     value="org.eclipse.emf.edit.domain.IEditingDomainProvider">
+               </instanceof>
+            </with>
+         </activeWhen>
+      </handler>
+   </extension>
+   
+   
    <extension
          point="ac.soton.emf.translator.rule">
       <translator
