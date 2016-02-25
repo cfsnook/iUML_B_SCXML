@@ -33,8 +33,8 @@ import org.eventb.emf.core.context.Context;
 import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.persistence.AttributeIdentifiers;
 
-import ac.soton.emf.translator.IAdapter;
 import ac.soton.emf.translator.TranslationDescriptor;
+import ac.soton.emf.translator.configuration.IAdapter;
 
 
 /**

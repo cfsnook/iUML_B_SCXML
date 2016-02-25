@@ -21,8 +21,8 @@ import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
 
-import ac.soton.emf.translator.IRule;
 import ac.soton.emf.translator.TranslationDescriptor;
+import ac.soton.emf.translator.configuration.IRule;
 import ac.soton.emf.translator.utils.Find;
 import ac.soton.eventb.statemachines.Initial;
 import ac.soton.eventb.statemachines.Statemachine;

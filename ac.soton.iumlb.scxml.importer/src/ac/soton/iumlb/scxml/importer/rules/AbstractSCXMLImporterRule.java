@@ -16,8 +16,8 @@ import org.eventb.emf.core.CorePackage;
 import org.eventb.emf.core.context.ContextPackage;
 import org.eventb.emf.core.machine.MachinePackage;
 
-import ac.soton.emf.translator.AbstractRule;
-import ac.soton.emf.translator.IRule;
+import ac.soton.emf.translator.configuration.AbstractRule;
+import ac.soton.emf.translator.configuration.IRule;
 import ac.soton.eventb.emf.core.extension.coreextension.CoreextensionPackage;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.eventb.statemachines.TranslationKind;
