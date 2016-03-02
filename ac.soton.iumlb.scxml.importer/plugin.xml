@@ -6,9 +6,9 @@
          point="org.eclipse.ui.commands">
       <command
             categoryId="ac.soton.eventb.emf.diagrams.iUMLB"
-            description="Import to iUML-B/Event-B"
-            id="ac.soton.eventb.emf.diagrams.importexport.import2iUMLB"
-            name="Import to iUML-B">
+            description="Translate SCXML to iUML-B/Event-B"
+            id="ac.soton.utils.SCXML2iUMLB"
+            name="Translate SCXML to iUML-B">
       </command>
    </extension>
    
@@ -19,9 +19,9 @@
         allPopups="true"
         locationURI="toolbar:ac.soton.eventb.emf.diagrams.toolbar?after=transformations">
      <command
-           commandId="ac.soton.eventb.emf.diagrams.importexport.import2iUMLB"
-           icon="icons/import.png"
-           label="import"
+           commandId="ac.soton.utils.SCXML2iUMLB"
+           icon="icons/scxml2iumlb.png"
+           label="scxml2iumlb"
            style="push">
      </command>
   </menuContribution>
@@ -42,7 +42,7 @@
          point="org.eclipse.ui.handlers">
       <handler
             class="ac.soton.emf.translator.handler.TranslateHandler"
-            commandId="ac.soton.eventb.emf.diagrams.importexport.import2iUMLB">
+            commandId="ac.soton.utils.SCXML2iUMLB">
          <enabledWhen>
             <with
                   variable="activeEditor">
