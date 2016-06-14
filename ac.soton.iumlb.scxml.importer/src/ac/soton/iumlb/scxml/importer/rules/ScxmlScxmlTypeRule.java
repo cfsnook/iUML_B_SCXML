@@ -42,7 +42,7 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		ScxmlScxmlType scxml = (ScxmlScxmlType)sourceElement;
 		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		String fileName = scxml.eResource().getURI().toPlatformString(true);
-		String statechartName = scxml.getName();
+		String statechartName = scxml.getName()+"_sm";
 		Project project = Utils.findProject(sourceElement);
 		Machine machine=null;
 		for (int i=0; i<=depth; i++){
@@ -56,7 +56,7 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 				Statemachine statemachine = (Statemachine) Make.statemachine(statechartName, tkind, "");
 				machine.getExtensions().add(statemachine);
 			}else{
-				machine = refine (scxml, machine, statechartName+"_"+i);
+				machine = refine (scxml, machine, Utils.getMachineName(scxml,i)); //statechartName+"_"+i);
 				ret.add(Make.descriptor(project, components, machine ,1));
 			}
 			

@@ -68,7 +68,7 @@ public class ScxmlStateType2StateRule extends AbstractSCXMLImporterRule implemen
 		int depth = Utils.getRefinementDepth(sourceElement);
 		for (int i=refinementLevel; i<=depth; i++){
 			Machine m = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
-			String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
+			String parentSmName = (stateContainer==null? scxmlContainer.getName() : stateContainer.getId())+"_sm";
 			Statemachine psm = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
 			if (psm==null) return false;
 			

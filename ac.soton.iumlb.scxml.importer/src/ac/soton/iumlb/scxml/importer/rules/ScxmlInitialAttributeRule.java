@@ -56,7 +56,7 @@ public class ScxmlInitialAttributeRule extends AbstractSCXMLImporterRule impleme
 		for (int i=refinementLevel; i<=depth; i++){
 			Refinement ref = new Refinement();
 			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
-			ref.statemachine = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, scxmlContainer.getName()); 
+			ref.statemachine = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, scxmlContainer.getName()+"_sm"); 
 			ref.initialisation= (Event) Find.element(m, m, events, MachinePackage.Literals.EVENT, "INITIALISATION");
 			if (ref.statemachine==null || ref.initialisation==null) return false;
 			ref.targets.clear();

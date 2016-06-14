@@ -57,7 +57,7 @@ public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRu
 	@Override
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> translatedElements) throws Exception  {
 		((ScxmlFinalType) sourceElement).getId();
-		String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
+		String parentSmName = (stateContainer==null? scxmlContainer.getName() : stateContainer.getId())+"_sm";
 		statemachines.clear();
 		int refinementLevel = Utils.getRefinementLevel(sourceElement.eContainer());
 		int depth = Utils.getRefinementDepth(sourceElement);

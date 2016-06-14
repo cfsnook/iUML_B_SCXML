@@ -71,7 +71,7 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 		refinements.clear();
 		int refinementLevel = Utils.getRefinementLevel(stateContainer==null? scxmlContainer : stateContainer);
 		int depth = Utils.getRefinementDepth(sourceElement);		
-		String parentSmName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId()+"_sm";
+		String parentSmName = (stateContainer==null? scxmlContainer.getName() : stateContainer.getId())+"_sm";
 		
 		for (int i=refinementLevel; i<=depth; i++){
 			Refinement ref = new Refinement();
