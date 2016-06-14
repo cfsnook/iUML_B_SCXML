@@ -27,9 +27,16 @@ public class IumlbScxmlAdapter {
 	   */
 	  protected EObject target = null;
 
-	
-	 /**
+		 /**
 	   * Creates an instance.
+	   */
+	  public IumlbScxmlAdapter()
+	  {
+	    //adapt(target);
+	  }
+	  
+	 /**
+	   * Creates an instance that adapts target eObject
 	   */
 	  public IumlbScxmlAdapter(EObject target)
 	  {
@@ -40,8 +47,9 @@ public class IumlbScxmlAdapter {
 	   * makes this instance adapt the given target
 	   * @param target
 	   */
-	  public void adapt(EObject target){
+	  public IumlbScxmlAdapter adapt(EObject target){
 		    this.target = target;
+		    return this;
 	  }
 	  
 	 /**
@@ -105,7 +113,10 @@ public class IumlbScxmlAdapter {
 			if (target.eContainer()==null){
 				return 0;
 			}else{
-				return new IumlbScxmlAdapter(target.eContainer()).getRefinementLevel();
+				EObject oldTarget = target;
+				int refLevel = this.adapt(target.eContainer()).getRefinementLevel();
+				this.adapt(oldTarget);
+				return refLevel; //new IumlbScxmlAdapter(target.eContainer()).getRefinementLevel();
 			}
 		}
 	}

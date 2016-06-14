@@ -279,11 +279,15 @@ public class Utils {
 	 * @return integer representing the number of refinements needed
 	 */
 	public static int getRefinementDepth(EObject scxmlElement) {
+//		return 3;
+		IumlbScxmlAdapter adapter = new IumlbScxmlAdapter(null);
 		int depth = 0;
 		ScxmlScxmlType scxml = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlElement);
 		List<EObject> eObjects = Find.eAllContents(scxml, EcorePackage.Literals.EOBJECT);
 		for (EObject eObject : eObjects){
-			int ref = new IumlbScxmlAdapter(eObject).getRefinementLevel();
+			int ref = (adapter.adapt(eObject)).getBasicRefinementLevel();
+
+			//int ref = new IumlbScxmlAdapter(eObject).getRefinementLevel();
 			depth = ref>depth? ref : depth;
 		}
 		return depth;
