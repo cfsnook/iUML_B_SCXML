@@ -95,12 +95,24 @@ public class Strings {
 	}
 	
 	public static String INV_PREDICATE(String predicate) {
-		String pred = convertLocation(convertBoolVals(convertDoubleEquals(predicate)));
+		String pred = convertLocation(
+				convertBoolVals(
+				convertDoubleEquals(
+				convertIn(		predicate)
+				)));
 		return pred;
 	}
 	
 	////
 	
+	/**
+	 * @param predicate
+	 * @return
+	 */
+	private static String convertIn(String predicate) {
+		return predicate==null?  "<null>": predicate.replaceAll(":", "\u2208");
+	}
+
 	private static String convertDoubleEquals(String expr) {
 		return expr==null? "<null>": expr.replaceAll("==", "=");
 	}
@@ -120,6 +132,15 @@ public class Strings {
 
 	private static String convertLocation(String location){
 		return location==null? "<null>": location.replaceAll("\\.", "_");
+	}
+
+	/**
+	 * @param string
+	 * @return
+	 */
+	public static String ACT_ASSIGN(String action) {
+		// TODO Auto-generated method stub
+		return action==null? "<null>": action.replaceAll(":=", "\u2254"); 
 	}
 	
 
