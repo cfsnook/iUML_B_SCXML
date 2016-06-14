@@ -24,8 +24,10 @@ import org.eclipse.sirius.tests.sample.scxml.ScxmlTransitionType;
 import org.eventb.emf.core.machine.Action;
 import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.core.machine.Guard;
+import org.eventb.emf.core.machine.Invariant;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
+import org.eventb.emf.core.machine.Variable;
 
 import ac.soton.emf.translator.TranslationDescriptor;
 import ac.soton.emf.translator.configuration.IRule;
@@ -133,6 +135,38 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 //				transition.getGuards().add(guard);
 //			}
 
+			//triggers (called event in SCXML)
+			String scxmlTransitionEvent = scxmlTransition.getEvent();
+			if (scxmlTransitionEvent!=null){
+				String[] triggers = scxmlTransitionEvent.split(" ");
+				for (String triggerName : triggers){
+					String comment = "SCXML trigger event";
+					transition.getGuards().add((Guard) Make.guard(
+								"scxmlTrigger_"+triggerName,false,
+								Strings.INV_PREDICATE(triggerName + "= TRUE"),comment));
+					transition.getActions().add((Action) Make.action(
+								"scxmlTrigger_"+triggerName+"_reset",
+								Strings.ACT_ASSIGN(triggerName + ":= FALSE"),comment));
+					
+					Event ev = Utils.getOrCreateEvent(ref.machine, translatedElements, "scxmlTriggerEvent_"+triggerName);
+					if (ev!=null && ev.getActions().isEmpty()){
+						ev.getGuards().add((Guard) Make.guard("gd_1", Strings.INV_PREDICATE(triggerName + "= FALSE")));
+						ev.getActions().add( (Action) Make.action("act_1", Strings.ACT_ASSIGN(triggerName + ":= TRUE")));
+					}
+					
+					Object var = Find.element(ref.machine, ref.machine, variables, MachinePackage.Literals.VARIABLE, triggerName);
+					if (var==null) {
+						ref.machine.getVariables().add((Variable) Make.variable(triggerName, comment));
+						ref.machine.getInvariants().add((Invariant) Make.invariant("typof_"+triggerName, 
+								Strings.INV_PREDICATE(triggerName + ": BOOL"), comment));
+						Event initialisation = (Event) Find.element(ref.machine, ref.machine, events, MachinePackage.Literals.EVENT, "INITIALISATION");
+						initialisation.getActions().add((Action) Make.action("init_"+triggerName, 
+								Strings.ACT_ASSIGN(triggerName + ":= FALSE"), comment));
+					}
+				}
+			}
+			
+			//guards
 			List<IumlbScxmlAdapter> gds = new IumlbScxmlAdapter(scxmlTransition).getGuards();
 			for (IumlbScxmlAdapter gd : gds){
 				int rl = gd.getBasicRefinementLevel();
@@ -145,6 +179,8 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 					transition.getGuards().add(guard);
 				}
 			}
+			
+			//actions (assigns in SCXML)
 			int i=0;
 			for (ScxmlAssignType assign : scxmlTransition.getAssign()){
 				if(new IumlbScxmlAdapter(assign).getBasicRefinementLevel() <= ref.level){
