@@ -43,22 +43,6 @@
       <handler
             class="ac.soton.emf.translator.handler.TranslateHandler"
             commandId="ac.soton.utils.SCXML2iUMLB">
-         <enabledWhen>
-            <with
-                  variable="activeEditor">
-               <instanceof
-                     value="org.eclipse.emf.edit.domain.IEditingDomainProvider">
-               </instanceof>
-            </with>
-         </enabledWhen>
-         <activeWhen>
-            <with
-                  variable="activeEditor">
-               <instanceof
-                     value="org.eclipse.emf.edit.domain.IEditingDomainProvider">
-               </instanceof>
-            </with>
-         </activeWhen>
       </handler>
    </extension>
    
