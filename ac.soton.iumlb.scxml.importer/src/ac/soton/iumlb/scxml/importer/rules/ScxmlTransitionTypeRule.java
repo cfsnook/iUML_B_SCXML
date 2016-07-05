@@ -192,7 +192,7 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			int i=0;
 			for (ScxmlAssignType assign : scxmlTransition.getAssign()){
 				if(new IumlbScxmlAdapter(assign).getRefinementLevel() <= ref.level){
-					Action action = (Action) Make.action(transition.getLabel()+"_act_"+i, Strings.ASSIGN_ACTION(assign), "Raise internal SCXML trigger");
+					Action action = (Action) Make.action(transition.getLabel()+"_act_"+i, Strings.ASSIGN_ACTION(assign), "SCXML transition assign");
 					transition.getActions().add(action);
 					i++;
 				}
@@ -202,7 +202,7 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			// (n.b. we rely on the triggered transition to generate the trigger variable. Hence if no transition uses this trigger an error will be flagged)
 			for (ScxmlRaiseType raise : scxmlTransition.getRaise()){
 				if(new IumlbScxmlAdapter(raise).getRefinementLevel() <= ref.level){
-					Action action = (Action) Make.action(transition.getLabel()+"_act_"+i, Strings.ACT_ASSIGN(raise.getEvent()+" := TRUE"));
+					Action action = (Action) Make.action(transition.getLabel()+"_act_"+i, Strings.ACT_ASSIGN(raise.getEvent()+" := TRUE"), "Raise internal SCXML trigger");
 					transition.getActions().add(action);
 					i++;
 				}
