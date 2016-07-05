@@ -2,7 +2,7 @@
 <feature
       id="ac.soton.iumlb.scxml.feature"
       label="%featureName"
-      version="1.0.0"
+      version="1.1.0"
       provider-name="%providerName"
       plugin="ac.soton.iumlb.branding">
 
