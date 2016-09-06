@@ -51,10 +51,11 @@
          point="ac.soton.emf.translator.rule">
       <translator
             adapter_class="ac.soton.iumlb.scxml.importer.EventBImportAdapter"
-            translatorID="ac.soton.iumlb.scxml.importer"
+            commandID="ac.soton.utils.SCXML2iUMLB"
             name="SCXML Importer"
             root_source_class="DocumentRoot"
-            sourcePackage="http://www.w3.org/2005/07/scxml">
+            sourcePackage="http://www.w3.org/2005/07/scxml"
+            translatorID="ac.soton.iumlb.scxml.importer">
          <rule
                name="ScxmlScxmlTypeRule"
                rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlScxmlTypeRule"
