@@ -48,14 +48,22 @@
    
    
    <extension
-         point="ac.soton.emf.translator.rule">
+         point="ac.soton.emf.translators">
       <translator
             adapter_class="ac.soton.iumlb.scxml.importer.EventBImportAdapter"
-            commandID="ac.soton.utils.SCXML2iUMLB"
+            command_id="ac.soton.utils.SCXML2iUMLB"
             name="SCXML Importer"
             root_source_class="DocumentRoot"
-            sourcePackage="http://www.w3.org/2005/07/scxml"
-            translatorID="ac.soton.iumlb.scxml.importer">
+            source_package="http://www.w3.org/2005/07/scxml"
+            translator_id="ac.soton.iumlb.scxml.importer">
+      </translator>
+   </extension>
+   
+      <extension
+         point="ac.soton.emf.translator.rulesets">
+      <ruleset
+            name="SCXML Importer rules"
+            translator_id="ac.soton.iumlb.scxml.importer">
          <rule
                name="ScxmlScxmlTypeRule"
                rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlScxmlTypeRule"
@@ -101,7 +109,7 @@
                rule_class="ac.soton.iumlb.scxml.importer.rules.ScxmlFinalTypeRule"
                source_class="ScxmlFinalType">
          </rule>
-      </translator>
+      </ruleset>
    </extension>
 
 </plugin>
