@@ -2,7 +2,7 @@
 <feature
       id="ac.soton.iumlb.scxml.feature"
       label="%featureName"
-      version="1.1.0"
+      version="1.1.1.released"
       provider-name="%providerName"
       plugin="ac.soton.iumlb.branding">
 
@@ -38,9 +38,9 @@
       <import plugin="ac.soton.eventb.emf.core.extension" version="4.0.0" match="compatible"/>
       <import plugin="ac.soton.eventb.emf.core.extension.navigator" version="4.3.0" match="compatible"/>
       <import plugin="ac.soton.eventb.emf.diagrams" version="4.0.0" match="compatible"/>
-      <import plugin="ac.soton.emf.translator" version="1.0.0" match="compatible"/>
       <import plugin="ac.soton.eventb.statemachines" version="3.1.0" match="compatible"/>
       <import feature="ac.soton.eventb.statemachines.feature" version="3.4.1"/>
+      <import plugin="ac.soton.emf.translator" version="2.0.0" match="compatible"/>
    </requires>
 
    <plugin
