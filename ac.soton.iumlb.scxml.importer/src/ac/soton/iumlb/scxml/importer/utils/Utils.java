@@ -149,6 +149,10 @@ public class Utils {
 				}
 			}
 		}
+		if (scxmlContainer.getInitial().contains(scxmlParentStateName)){
+			Event ev = getOrCreateEvent(machine, generatedElements, "INITIALISATION");
+			eventList.add(ev);
+		}
 		return eventList;
 	}
 	
@@ -252,8 +256,13 @@ public class Utils {
 			
 		//if no names found default to 'source_target' format
 		if (eventNames.size()==0){
+			String sourceId = 
+					source instanceof ScxmlInitialType ? "initial" :
+					source instanceof ScxmlStateType ? ((ScxmlStateType)source).getId() :
+						"<unknown_source_type>"
+					;
 			for (String targetName : scxmlTransition.getTarget()){
-				eventNames.add(((ScxmlStateType)source).getId()+"_"+targetName);
+				eventNames.add(sourceId+"_"+targetName);
 			}
 		}
 
