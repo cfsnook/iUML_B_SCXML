@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            categoryId="ac.soton.eventb.emf.diagrams.iUMLB"
+            description="Translate SCXML to Event-B (with R2C semantics)"
+            id="ac.soton.utils.SCXML2EVENTB"
+            name="Translate SCXML to Event-B">
+      </command>
+   </extension>
+   
+<extension
+      name="EventB Diagrams"
+      point="org.eclipse.ui.menus">
+  <menuContribution
+        allPopups="true"
+        locationURI="toolbar:ac.soton.eventb.emf.diagrams.toolbar?after=transformations">
+     <command
+           commandId="ac.soton.utils.SCXML2EVENTB"
+           icon="icons/scxml2eventb.png"
+           label="scxml2eventb"
+           style="push">
+     </command>
+  </menuContribution>
+  <!--menuContribution			DOES NOT WORK
+        allPopups="false"
+        locationURI="popup">
+     <command
+           commandId="ac.soton.eventb.emf.diagrams.importexport.import2iUMLB"
+           icon="icons/import.png"
+           label="Import SCXML to iUML-B"
+           style="push">
+     </command>
+  </menuContribution-->
+
+</extension>
+
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="ac.soton.emf.translator.handler.TranslateHandler"
+            commandId="ac.soton.utils.SCXML2EVENTB">
+      </handler>
+   </extension>
+   
+   
+   <extension
+         point="ac.soton.emf.translators">
+      <translator
+            adapter_class="ac.soton.scxml.eventb.EventBImportAdapter"
+            command_id="ac.soton.utils.SCXML2EVENTB"
+            name="SCXML Event-B generator"
+            root_source_class="DocumentRoot"
+            source_package="http://www.w3.org/2005/07/scxml"
+            translator_id="ac.soton.scxml.eventb.generator">
+      </translator>
+   </extension>
+   
+      <extension
+         point="ac.soton.emf.translator.rulesets">
+      <ruleset
+            name="SCXML Event-B generator rules"
+            translator_id="ac.soton.scxml.eventb.generator">
+         <rule
+               name="ScxmlScxmlTypeRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlScxmlTypeRule"
+               source_class="ScxmlScxmlType">
+         </rule>
+         <rule
+               name="ScxmlDataTypeRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlDataTypeRule"
+               source_class="ScxmlDataType">
+         </rule>
+         <rule
+               name="ScxmlStateType2StateRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlStateType2StateRule"
+               source_class="ScxmlStateType">
+         </rule>
+         <rule
+               name="ScxmlStateType2StatemachineRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlStateType2StatemachineRule"
+               source_class="ScxmlStateType">
+         </rule>
+         <rule
+               name="ScxmlTransitionTypeRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlTransitionTypeRule"
+               source_class="ScxmlTransitionType">
+         </rule>
+         <rule
+               name="ScxmlOnentryTypeRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlOnentryTypeRule"
+               source_class="ScxmlOnentryType">
+         </rule>
+         <rule
+               name="ScxmlOnexitTypeRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlOnexitTypeRule"
+               source_class="ScxmlOnexitType">
+         </rule>
+         <rule
+               name="ScxmlInitialAttributeRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlInitialAttributeRule"
+               source_class="ScxmlScxmlType">
+         </rule>
+         <rule
+               name="ScxmlFinalTypeRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlFinalTypeRule"
+               source_class="ScxmlFinalType">
+         </rule>
+      </ruleset>
+   </extension>
+
+</plugin>
