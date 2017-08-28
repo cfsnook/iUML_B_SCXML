@@ -56,7 +56,7 @@ public class ScxmlStateType2StatemachineRule extends AbstractSCXMLImporterRule i
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> translatedElements) throws Exception  {
 		smOwners.clear();
 		int refinementLevel = Utils.getRefinementLevel(sourceElement);
-		int depth = Utils.getRefinementDepth(sourceElement);
+		int depth = getRefinementDepth(sourceElement);
 		String smOwnerName = null;
 		if (sourceElement.eContainer().eClass() ==ScxmlPackage.Literals.SCXML_PARALLEL_TYPE){
 			smOwnerName = stateContainer==null? scxmlContainer.getName() : stateContainer.getId();

@@ -41,7 +41,7 @@
    <extension
          point="org.eclipse.ui.handlers">
       <handler
-            class="ac.soton.emf.translator.handler.TranslateHandler"
+            class="ac.soton.scxml.eventb.ScxmlTranslateHandler"
             commandId="ac.soton.utils.SCXML2EVENTB">
       </handler>
    </extension>
@@ -111,5 +111,11 @@
          </rule>
       </ruleset>
    </extension>
+      <extension
+            point="ac.soton.eventb.emf.core.extension.navigator.emfFileExtensions">
+         <model
+               extension="scxml">
+         </model>
+      </extension>
 
 </plugin>

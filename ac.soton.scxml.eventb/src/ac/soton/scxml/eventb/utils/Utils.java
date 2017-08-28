@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.URI;
@@ -106,8 +107,29 @@ public class Utils {
 		if (ev==null) ev =  (Event) Find.translatedElement(descriptors, machine, MachinePackage.Literals.MACHINE__EVENTS, eventName);
 		if (ev==null) {
 			ev = (Event) Make.event(eventName);
+			ev.setExtended(true);
 			machine.getEvents().add(ev);
 		}
+		return ev;
+	}
+	
+	/**
+	 * Finds an event for the given transitions combination in the given machine or descriptors
+	 *  if no such event is found a new event is created and added to the machine
+	 *  
+	 * @param machine
+	 * @param translatedElements
+	 * @param triggerName
+	 * @param combi
+	 * @return
+	 */
+	public static Event getOrCreateEvent(Machine machine, List<TranslationDescriptor> descriptors, String triggerName, Set<ScxmlTransitionType> combi) {
+		String eventName = "null".equals(triggerName)? "" : triggerName;
+		for (ScxmlTransitionType tr : combi){
+			String trName = Utils.getEventNames(tr, machine, descriptors).get(0);
+			eventName = eventName.length()==0 ?  trName : eventName+ "__" + trName;
+		}
+		Event ev = getOrCreateEvent(machine,descriptors,eventName);
 		return ev;
 	}
 	
@@ -282,25 +304,6 @@ public class Utils {
 	}
 	
 	
-	/**
-	 * This finds the refinement depth required by the Scxml model containing the given Scxml element
-	 * @param scxml element
-	 * @return integer representing the number of refinements needed
-	 */
-	public static int getRefinementDepth(EObject scxmlElement) {
-//		return 3;
-		IumlbScxmlAdapter adapter = new IumlbScxmlAdapter(null);
-		int depth = 0;
-		ScxmlScxmlType scxml = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlElement);
-		List<EObject> eObjects = Find.eAllContents(scxml, EcorePackage.Literals.EOBJECT);
-		for (EObject eObject : eObjects){
-			int ref = (adapter.adapt(eObject)).getBasicRefinementLevel();
-
-			//int ref = new IumlbScxmlAdapter(eObject).getRefinementLevel();
-			depth = ref>depth? ref : depth;
-		}
-		return depth;
-	}
 	
 	/**
 	 * Returns the starting refinement level for this scxml element
@@ -345,6 +348,8 @@ public class Utils {
 		uri = uri.appendFileExtension("bum");
 		uri = uri.appendFragment(abstractElement.getReference());
 		AbstractElementRefiner refiner = ElementRefinerRegistry.getRegistry().getRefiner(abstractElement);
+		if (refiner == null) 
+			return null;
 		Map<EObject,EObject> copy = refiner.refine(uri, abstractElement, null);
 		EObject refinedElement = copy.get(abstractElement);
 		return refinedElement;
@@ -376,5 +381,8 @@ public class Utils {
 		}
 		return Strings.TYPE_PREDICATE(scxml.getId(),type);
 	}
+
+
+
 
 }

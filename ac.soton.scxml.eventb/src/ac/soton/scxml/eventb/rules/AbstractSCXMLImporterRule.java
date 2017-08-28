@@ -10,17 +10,25 @@
  *******************************************************************************/
 package ac.soton.scxml.eventb.rules;
 
+import java.util.List;
+
 import org.eclipse.emf.ecore.EAttribute;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.EcorePackage;
+import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
+import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eventb.emf.core.CorePackage;
 import org.eventb.emf.core.context.ContextPackage;
 import org.eventb.emf.core.machine.MachinePackage;
 
 import ac.soton.emf.translator.configuration.AbstractRule;
 import ac.soton.emf.translator.configuration.IRule;
+import ac.soton.emf.translator.utils.Find;
 import ac.soton.eventb.emf.core.extension.coreextension.CoreextensionPackage;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.eventb.statemachines.TranslationKind;
+import ac.soton.scxml.eventb.utils.IumlbScxmlAdapter;
 
 
 /**
@@ -59,8 +67,30 @@ public abstract class AbstractSCXMLImporterRule extends AbstractRule implements 
 	
 	protected static final TranslationKind tkind = TranslationKind.MULTIVAR;
 
+	protected ITranslatorStorage storage = TranslatorStorage.getDefault();
 
 	
+	/**
+	 * This finds the refinement depth required by the Scxml model containing the given Scxml element
+	 * @param scxml element
+	 * @return integer representing the number of refinements needed
+	 */
+	public int getRefinementDepth(EObject scxmlElement) {
+		Integer depth = (Integer) storage.fetch("depth");
+		if (depth==null) {
+			IumlbScxmlAdapter adapter = new IumlbScxmlAdapter(null);
+			depth = 0;
+			ScxmlScxmlType scxml = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlElement);
+			List<EObject> eObjects = Find.eAllContents(scxml, EcorePackage.Literals.EOBJECT);
+			for (EObject eObject : eObjects){
+				int ref = (adapter.adapt(eObject)).getBasicRefinementLevel();
 	
+				//int ref = new IumlbScxmlAdapter(eObject).getRefinementLevel();
+				depth = ref>depth? ref : depth;
+			}
+			storage.stash("depth",depth);
+		}
+		return depth;
+	}
 
 }

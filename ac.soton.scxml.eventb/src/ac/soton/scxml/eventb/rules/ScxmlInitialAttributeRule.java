@@ -52,7 +52,7 @@ public class ScxmlInitialAttributeRule extends AbstractSCXMLImporterRule impleme
 		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType)  sourceElement;
 		refinements.clear();
 		int refinementLevel = Utils.getRefinementLevel(sourceElement);
-		int depth = Utils.getRefinementDepth(sourceElement);
+		int depth = getRefinementDepth(sourceElement);
 		for (int i=refinementLevel; i<=depth; i++){
 			Refinement ref = new Refinement();
 			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));

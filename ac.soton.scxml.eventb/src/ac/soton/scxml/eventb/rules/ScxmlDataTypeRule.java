@@ -61,7 +61,7 @@ public class ScxmlDataTypeRule extends AbstractSCXMLImporterRule implements IRul
 		ScxmlDataType scxml = (ScxmlDataType)sourceElement;
 		refinements.clear();
 		int refinementLevel = Utils.getRefinementLevel(sourceElement);
-		int depth = Utils.getRefinementDepth(sourceElement);		
+		int depth = getRefinementDepth(sourceElement);		
 		
 		for (int i=refinementLevel; i<=depth; i++){
 			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));	

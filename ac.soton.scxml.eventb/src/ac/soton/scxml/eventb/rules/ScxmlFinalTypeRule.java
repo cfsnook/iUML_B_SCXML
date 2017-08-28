@@ -60,7 +60,7 @@ public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRu
 		String parentSmName = (stateContainer==null? scxmlContainer.getName() : stateContainer.getId())+"_sm";
 		statemachines.clear();
 		int refinementLevel = Utils.getRefinementLevel(sourceElement.eContainer());
-		int depth = Utils.getRefinementDepth(sourceElement);
+		int depth = getRefinementDepth(sourceElement);
 		for (int i=refinementLevel; i<=depth; i++){
 			Machine m = (Machine) Find.translatedElement(translatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
 			Statemachine sm = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);

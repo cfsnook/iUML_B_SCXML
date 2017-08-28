@@ -13,6 +13,8 @@ package ac.soton.scxml.eventb.rules;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlAssignType;
@@ -59,6 +61,8 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 		private AbstractNode target = null;	
 	}
 	private List<Refinement> refinements = new ArrayList<Refinement>();
+    private Map<String, Set<Set<ScxmlTransitionType>>> combinations;
+	private Map<String, List<ScxmlTransitionType>> raisedTriggers;
 
 	@Override
 	public boolean enabled(final EObject sourceElement) throws Exception  {
@@ -73,7 +77,7 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
 		refinements.clear();
 		int refinementLevel = Utils.getRefinementLevel(stateContainer==null? scxmlContainer : stateContainer);
-		int depth = Utils.getRefinementDepth(sourceElement);		
+		int depth = getRefinementDepth(sourceElement);		
 		String parentSmName = (stateContainer==null? scxmlContainer.getName() : stateContainer.getId())+"_sm";
 		
 		for (int i=refinementLevel; i<=depth; i++){
@@ -106,6 +110,8 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 
 	@Override
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> translatedElements) throws Exception {
+		combinations = (Map<String, Set<Set<ScxmlTransitionType>>>) storage.fetch("combinations");
+		raisedTriggers = (Map<String, List<ScxmlTransitionType>>) storage.fetch("raises");
 		ScxmlTransitionType scxmlTransition = ((ScxmlTransitionType) sourceElement);
 		Machine abstractMachine = null;
 		for (Refinement ref : refinements){
@@ -118,17 +124,20 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			}else{
 				abstractMachine=null;
 			}
-			for (String eventName: Utils.getEventNames(scxmlTransition, ref.machine, translatedElements)){
-				Event ev = Utils.getOrCreateEvent(ref.machine, translatedElements, eventName);
-				if (abstractMachine!=null){
-					Event refinedEvent = (Event) Find.element(abstractMachine, abstractMachine, events, MachinePackage.Literals.EVENT, eventName);
-					if (refinedEvent!=null && !ev.getRefinesNames().contains(eventName)){
-						//ev.getRefines().add(refinedEvent);
-						ev.getRefinesNames().add(eventName);
-					}
-				}
-				transition.getElaborates().add(ev);
-			}
+			
+
+
+//			for (String eventName: Utils.getEventNames(scxmlTransition, ref.machine, translatedElements)){
+//				Event ev = Utils.getOrCreateEvent(ref.machine, translatedElements, eventName);
+//				if (abstractMachine!=null){
+//					Event refinedEvent = (Event) Find.element(abstractMachine, abstractMachine, events, MachinePackage.Literals.EVENT, eventName);
+//					if (refinedEvent!=null && !ev.getRefinesNames().contains(eventName)){
+//						//ev.getRefines().add(refinedEvent);
+//						ev.getRefinesNames().add(eventName);
+//					}
+//				}
+//				transition.getElaborates().add(ev);
+//			}
 //			//cond -> guard
 //			String cond = scxmlTransition.getCond();
 //			if (cond!=null && cond.length()>0) {
@@ -136,18 +145,53 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 //				transition.getGuards().add(guard);
 //			}
 
-			//triggers (these are called events in SCXML)
-			String scxmlTransitionEvent = scxmlTransition.getEvent();
-			if (scxmlTransitionEvent!=null){
-				String[] triggers = scxmlTransitionEvent.split(" ");
-				for (String triggerName : triggers){
+			//This next section creates the events that raise the triggers (these are called events in SCXML) 
+			String scxmlTransitionEvent = scxmlTransition.getEvent();	
+			if (scxmlTransitionEvent==null || scxmlTransitionEvent.trim().length() == 0){ scxmlTransitionEvent ="null";}
+
+			String[] triggers = scxmlTransitionEvent.split(" ");
+			for (String triggerName : triggers){
+				for (Set<ScxmlTransitionType> combi : combinations.get(triggerName)){
+					if (combi != null && combi.contains(scxmlTransition)){
+						Event ev = Utils.getOrCreateEvent(ref.machine, translatedElements, triggerName, combi);
+						//Event refinedEvent = null;
+						String refinedEventName = null;
+						//FIXME: need to set up parameter for triggers
+						Object refinedEvent = Find.element(null,abstractMachine, MachinePackage.Literals.MACHINE__EVENTS, MachinePackage.Literals.EVENT, ev.getName());
+						if (refinedEvent==null){ //"basis".equals(abstractMachine.getName())){
+							if ("null".equals(triggerName)){
+									refinedEventName = Strings.untriggeredEventName;
+							}else if(raisedTriggers.containsKey(triggerName)){
+								refinedEventName = Strings.consumeInternalTriggerEventName;
+							}else{
+								refinedEventName = Strings.consumeExternalTriggerEventName;								
+							}
+						}else{
+							refinedEventName = ev.getName();
+						}
+						//refinedEvent = (Event) Find.element(abstractMachine, abstractMachine, events, MachinePackage.Literals.EVENT, refinedEventName);								
+						if (!ev.getRefinesNames().contains(refinedEventName)){
+							//ev.getRefines().add(refinedEvent);
+							ev.getRefinesNames().add(refinedEventName);
+						}
+						transition.getElaborates().add(ev);
+					}
+				}
+					
+				//FIXME: need to add events for raising external triggers - modify below	
+				if (false) {// isExternalTrigger(triggerName)){
+					//This section creates the event that raises an external trigger
 					String comment = "SCXML trigger event";
+
+					// +++ put this somewhere else - should set up existing parameter value for consumed triggers
 					transition.getGuards().add((Guard) Make.guard(
 								"scxmlTrigger_"+triggerName,false,
 								Strings.INV_PREDICATE(triggerName + "= TRUE"),comment));
 					transition.getActions().add((Action) Make.action(
 								"scxmlTrigger_"+triggerName+"_reset",
 								Strings.ACT_ASSIGN(triggerName + ":= FALSE"),"Consume "+comment));
+					// --- put this somewhere else
+					
 					
 					String eventName = "scxmlTriggerEvent_"+triggerName;
 					Event ev = Utils.getOrCreateEvent(ref.machine, translatedElements, eventName);
@@ -200,6 +244,8 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			
 			//raising internal trigger events
 			// (n.b. we rely on the triggered transition to generate the trigger variable. Hence if no transition uses this trigger an error will be flagged)
+			
+			//FIXME: this should just add a name to the parameterised set of triggers that are already raised by this event
 			for (ScxmlRaiseType raise : scxmlTransition.getRaise()){
 				if(new IumlbScxmlAdapter(raise).getRefinementLevel() <= ref.level){
 					Action action = (Action) Make.action(transition.getLabel()+"_act_"+i, Strings.ACT_ASSIGN(raise.getEvent()+" := TRUE"), "Raise internal SCXML trigger");
