@@ -41,7 +41,7 @@
    <extension
          point="org.eclipse.ui.handlers">
       <handler
-            class="ac.soton.emf.translator.handler.TranslateHandler"
+            class="ac.soton.iumlb.scxml.importer.ScxmlTranslateHandler"
             commandId="ac.soton.utils.SCXML2iUMLB">
       </handler>
    </extension>
