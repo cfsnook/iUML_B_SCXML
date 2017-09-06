@@ -170,7 +170,7 @@ public class Strings {
 	public static final  String initInternalQName = "init_"+internalQueueName;
 	public static final  String initInternalQAction = internalQueueName+" \u2254 \u2205";
 	public static final  String initCompletionFlagName = "init_"+completionFlagName;
-	public static final  String initCompletionFlagAction = completionFlagName+" \u2254 TRUE";
+	public static final  String initCompletionFlagAction = completionFlagName+" \u2254 FALSE";
 	//e1
 	public static final  String futureExternalTriggersEventName = "SCXML_futureExternalTrigger";
 	public static final  String raisedExternalTriggersParameterName = "SCXML_raisedTriggers";

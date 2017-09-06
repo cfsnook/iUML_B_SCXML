@@ -363,7 +363,7 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		initialisation.getActions().add(a1);
 		Action a2 = (Action) Make.action(Strings.initExternalQName, Strings.initExternalQAction, "external Q is initially empty");
 		initialisation.getActions().add(a2);		
-		Action a3 = (Action) Make.action(Strings.initCompletionFlagName, Strings.initCompletionFlagAction, "completion is initially TRUE");
+		Action a3 = (Action) Make.action(Strings.initCompletionFlagName, Strings.initCompletionFlagAction, "completion is initially FALSE");
 		initialisation.getActions().add(a3);
 		
 		Event e1 = (Event) Make.event(Strings.futureExternalTriggersEventName);
