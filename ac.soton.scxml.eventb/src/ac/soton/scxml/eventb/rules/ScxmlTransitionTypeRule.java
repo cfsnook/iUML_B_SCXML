@@ -152,7 +152,7 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			String[] triggers = scxmlTransitionEvent.split(" ");
 			for (String triggerName : triggers){
 				for (Set<ScxmlTransitionType> combi : combinations.get(triggerName)){
-					if (combi != null && combi.contains(scxmlTransition)){
+					if (combi != null && combi.contains(scxmlTransition) && validForRefinement(combi,ref)){
 						Event ev = Utils.getOrCreateEvent(ref.machine, translatedElements, triggerName, combi);
 						//Event refinedEvent = null;
 						String refinedEventName = null;
@@ -255,6 +255,18 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			}
 		}
 		return Collections.emptyList();
+	}
+
+	/**
+	 * @param combi
+	 * @param ref
+	 * @return
+	 */
+	private boolean validForRefinement(Set<ScxmlTransitionType> combi, Refinement ref) {
+		for (ScxmlTransitionType tr : combi){
+			if (new IumlbScxmlAdapter(tr).getRefinementLevel() > ref.level) return false;
+		}
+		return true;
 	}
 	
 }
