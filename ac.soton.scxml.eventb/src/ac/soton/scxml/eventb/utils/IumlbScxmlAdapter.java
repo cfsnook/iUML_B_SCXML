@@ -26,6 +26,8 @@ public class IumlbScxmlAdapter {
 	   * The adapted SCXML element.
 	   */
 	  protected EObject target = null;
+	  
+	  protected Integer refinementLevel = null;
 
 		 /**
 	   * Creates an instance.
@@ -97,8 +99,8 @@ public class IumlbScxmlAdapter {
 	  
 	  
 	/**
-	 * Returns the starting refinement level for this SCXML element
-	 * This is given in a 'refinement' iumlb:attribute attached to the element,
+	 * Returns the starting semantic refinement level for this SCXML element
+	 * This is given by the 'refinement' iumlb:attribute attached to the element,
 	 * or, if none, the refinement level of its parent,
 	 * or, if none, 0
 	 * 
@@ -106,24 +108,26 @@ public class IumlbScxmlAdapter {
 	 * @return
 	 */
 	public int getRefinementLevel(){
-		Object level = getAnyAttributeValue("refinement");
-		if (level instanceof String) {
-			return Integer.parseInt((String)level);
-		}else{
-			if (target.eContainer()==null){
-				return 0;
-			}else{
-				EObject oldTarget = target;
-				int refLevel = this.adapt(target.eContainer()).getRefinementLevel();
-				this.adapt(oldTarget);
-				return refLevel; //new IumlbScxmlAdapter(target.eContainer()).getRefinementLevel();
+		if (refinementLevel==null){
+			refinementLevel = getBasicRefinementLevel();
+			if (refinementLevel < 0) {
+				if (target.eContainer()==null){
+					refinementLevel=0;
+				}else{
+//					EObject oldTarget = target;
+//					int refLevel = this.adapt(target.eContainer()).getRefinementLevel();
+//					this.adapt(oldTarget);
+//					refinementLevel=refLevel; 
+					refinementLevel=new IumlbScxmlAdapter(target.eContainer()).getRefinementLevel();
+				}
 			}
 		}
+		return refinementLevel;
+		
 	}
 	
 	/**
-	 * Returns the starting refinement level for this SCXML element
-	 * This is given in a 'refinement' iumlb:attribute attached to the element,
+	 * Returns the refinement attribute value for this SCXML element
 	 * if none, or the attribute string doesn't parse as an int, returns -1.
 	 * 
 	 * @param scxmlElement

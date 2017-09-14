@@ -71,6 +71,7 @@ public class Strings {
 	}
 
 	public static String ASSIGN_ACTION;
+
 	public static String ASSIGN_ACTION(ScxmlAssignType assign) {
 		return bind(ASSIGN_ACTION,
 				convertLocation(assign.getLocation()),
@@ -181,16 +182,43 @@ public class Strings {
 	public static final  String e1_a1_Name = "SCXML_raiseExternalTriggers";
 	public static final  String e1_a1_Action = externalQueueName+" ≔ "+externalQueueName+" \u222a "+raisedExternalTriggersParameterName;
 	public static final  String e1_a1_Comment = "";
-	//e2
-	public static final  String futureInternalTriggersEventName = "SCXML_futureInternalTrigger";	
+	
+	//Strings for making a guard to go in a refinement of the future external trigger event
+	// so that it raises a specific trigger 
+	public static final String specificRaisedExternalTriggerGuardName = "raisedExternalTrigger";
+	public static String specificRaisedExternalTriggerGuardPredicate(String raised) {
+		return raisedExternalTriggersParameterName+" = {"+raised+"}";
+	}
+	public static final String specificRaisedExternalTriggerGuardComment = "";
+
+	
+	//Strings
+	//public static final  String futureInternalTriggersEventName = "SCXML_futureInternalTrigger";	
 	public static final  String raisedInternalTriggersParameterName = "SCXML_raisedTriggers";
 	public static final  String raisedInternalTriggersParameterComment = "";
-	public static final  String e2_g1_Name = "typeof_"+raisedInternalTriggersParameterName;
-	public static final  String e2_g1_Predicate = raisedInternalTriggersParameterName+" \u2286 "+internalTriggersName;
-	public static final  String e2_g1_Comment = "";
-	public static final  String e2_a1_Name = "SCXML_raiseInternalTriggers";
-	public static final  String e2_a1_Action = internalQueueName+" ≔ "+internalQueueName+" \u222a "+raisedInternalTriggersParameterName;
-	public static final  String e2_a1_Comment = "";
+	public static final  String raisedInternalTriggersGuardName = "typeof_"+raisedInternalTriggersParameterName;
+	public static final  String raisedInternalTriggersGuardPredicate = raisedInternalTriggersParameterName+" \u2286 "+internalTriggersName;
+	public static final  String raisedInternalTriggersGuardComment = "";
+	public static final  String raisedInternalTriggersActionName = "SCXML_raiseInternalTriggers";
+	public static final  String raisedInternalTriggersActionAction = internalQueueName+" ≔ "+internalQueueName+" \u222a "+raisedInternalTriggersParameterName;
+	public static final  String raisedInternalTriggersActionComment = "";
+	
+	//Strings for making a guard to go in a refinement of the future external trigger event
+	// so that it raises a specific trigger 
+	public static final String specificRaisedInternalTriggersGuardName = "raisedInternalTriggers";
+	
+	/**
+	 * @param raiseList
+	 * @param finalised
+	 * @return
+	 */
+	public static String specificRaisedInternalTriggersGuardPredicate(String raiseList, boolean finalised) {
+		//String test = (finalised? raiseList + " = " : raiseList + " \u2286 ") + raisedInternalTriggersParameterName;
+		return (finalised? raiseList + " = " : raiseList + " \u2286 ") + raisedInternalTriggersParameterName;
+	}
+	
+	public static final String specificRaisedInternalTriggersGuardComment = "";
+	
 	//e3
 	public static final  String consumeExternalTriggerEventName = "SCXML_futureExternalTransitionSet";
 	public static final  String consumedExternalTriggerParameterName = "SCXML_et";
@@ -224,7 +252,7 @@ public class Strings {
 	public static final  String e4_a1_Action = completionFlagName+" \u2254 FALSE";
 	public static final  String e4_a1_Comment = "";
 	public static final  String e4_a2_Name = "SCXML_consumeInternalTrigger";
-	public static final  String e4_a2_Action = internalQueueName+" \u2254 "+internalQueueName+" \u2216 {"+consumedInternalTriggerParameterName+"}";
+	public static final  String e4_a2_Action = internalQueueName+" \u2254 ("+internalQueueName+" \u222a "+raisedInternalTriggersParameterName+") \u2216 {"+consumedInternalTriggerParameterName+"}";
 	public static final  String e4_a2_Comment = "";
 	//e5
 	public static final  String untriggeredEventName = "SCXML_futureUntriggeredTransitionSet";
@@ -242,7 +270,5 @@ public class Strings {
 	public static final  String e6_a1_Name = "SCXML_Complete";
 	public static final  String e6_a1_Action = completionFlagName+" \u2254 TRUE";
 	public static final  String e6_a1_Comment = "";
-
-
 
 }

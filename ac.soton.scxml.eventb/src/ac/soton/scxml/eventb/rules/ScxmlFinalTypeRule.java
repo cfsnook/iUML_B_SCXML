@@ -101,7 +101,7 @@ public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRu
 				eventNames.add(ev.getName());
 			}
 			for (String eventName: eventNames){
-				Event ev = Utils.getOrCreateEvent(machine, generatedElements, eventName);
+				Event ev = Utils.getOrCreateEvent(machine, false, generatedElements, eventName);
 				tr.getElaborates().add(ev);
 			}
 		}

@@ -12,21 +12,16 @@ package ac.soton.scxml.eventb.rules;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.sirius.tests.sample.scxml.ScxmlInitialType;
-import org.eclipse.sirius.tests.sample.scxml.ScxmlParallelType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlRaiseType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
-import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlTransitionType;
 import org.eventb.emf.core.Project;
 import org.eventb.emf.core.context.Axiom;
@@ -58,9 +53,16 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		
 		// Reset the storage
 		storage.reset();
-		int depth = getRefinementDepth(sourceElement);
-		
+
 		ScxmlScxmlType scxml = (ScxmlScxmlType)sourceElement;
+		
+		//find triggers and set up data for them in the storage
+		//(triggers are only represented in the scxml model by string attributes of transitions 
+		// so much of their details are implicit - hence the need to calculate this before the translation starts)
+		Map<String, Trigger> triggers =  findTriggers(scxml);
+		storage.stash("triggers", triggers);
+		
+		int depth = getRefinementDepth(sourceElement);
 		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		String fileName = scxml.eResource().getURI().toPlatformString(true);
 		String machineComment ="(generated from SCXML file: "+fileName+")";
@@ -78,13 +80,20 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		
 		//create the refinement chain of machines
 		for (int i=0; i<=depth; i++){
+			
+			// make a new machine by refining the previous level
 			machine = refine (scxml, machine, Utils.getMachineName(scxml,i), machineComment);
+			// all levels see the basis context
+			machine.getSeesNames().add(Strings.basisContextName);
+			//create the descriptor to put the machine in the project
 			ret.add(Make.descriptor(project, components, machine ,1));
+			//if this is the first level add a state-machine (subsequent levels will copy it by refinement)
 			if (i==0){
 				Statemachine statemachine = (Statemachine) Make.statemachine(statechartName, tkind, "");
 				machine.getExtensions().add(statemachine);
 			}
 			
+			//add any invariants that are for this refinement level
 			List<IumlbScxmlAdapter> invs = new IumlbScxmlAdapter(scxml).getinvariants();
 			for (IumlbScxmlAdapter inv : invs){
 				int refLevel = inv.getBasicRefinementLevel();
@@ -98,193 +107,27 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 					machine.getInvariants().add(invariant);
 				}
 			}
+			
+			//add any external trigger raising events needed at this level
+			for (String tname : triggers.keySet()){
+				if (tname == "null") continue;
+				Trigger t = triggers.get(tname);
+				if (t.isExternal() && t.getRefinementLevel()==i){
+					Event e = (Event) Make.event("ExternalTriggerEvent_"+t.getName());
+					e.getRefinesNames().add("SCXML_futureExternalTrigger");
+					e.setExtended(true);
+					Guard g = (Guard) Make.guard(
+							Strings.specificRaisedExternalTriggerGuardName, false, 
+							Strings.specificRaisedExternalTriggerGuardPredicate(t.getName()), 
+							Strings.specificRaisedExternalTriggerGuardComment);
+					e.getGuards().add(g);
+					machine.getEvents().add(e);
+				}
+			}
 		}
-		
-		findTriggers(scxml);
 		
 		
 		return ret;
-	}
-
-
-	/**
-	 * @param scxml
-	 */
-	private void findTriggers(ScxmlScxmlType scxml) {
-		Map<String, List<ScxmlTransitionType>> triggers = new HashMap<String, List<ScxmlTransitionType>>();
-		Map<String, List<ScxmlTransitionType>> raisedTriggers = new HashMap<String, List<ScxmlTransitionType>>();
-//		Map<ScxmlTransitionType, Set<ScxmlTransitionType>> synchronous = new HashMap<ScxmlTransitionType, Set<ScxmlTransitionType>>();
-		TreeIterator<EObject> it = scxml.eAllContents();
-		while (it.hasNext()){
-			EObject next = it.next(); 
-			if (next instanceof ScxmlTransitionType && !initialTransition((ScxmlTransitionType)next)){
-				ScxmlTransitionType scxmlTransition = (ScxmlTransitionType)next;
-				String triggerName = scxmlTransition.getEvent();
-				if (triggerName==null || triggerName.trim().length()==0) triggerName = "null"; //make sure it is not an empty identifier
-				//if (triggerName!=null && triggerName.length()>0){
-					List<ScxmlTransitionType> tlist = triggers.containsKey(triggerName)? 
-							triggers.get(triggerName) :
-							new ArrayList<ScxmlTransitionType>();
-					tlist.add(scxmlTransition);
-					triggers.put(triggerName, tlist);
-					//synchronous.put(scxmlTransition, findSynchronisations(scxmlTransition));   //NOT SURE HOW TO DO THIS
-				//}
-				EList<ScxmlRaiseType> raises = scxmlTransition.getRaise();
-				for (ScxmlRaiseType raise : raises){
-					List<ScxmlTransitionType> trans; 
-					if (raisedTriggers.containsKey(raise.getEvent())){	
-						trans = raisedTriggers.get(raise.getEvent());
-					}else{
-						trans = new ArrayList<ScxmlTransitionType>();
-					}
-					trans.add(scxmlTransition);
-					raisedTriggers.put(raise.getEvent(), trans);
-				}
-			}
-		}
-		
-		//for each trigger, the transitions that are triggered
-		storage.stash("triggers", triggers);
-		// for each raised trigger, the transitions that raise it
-		storage.stash("raises", raisedTriggers);
-		//for each transition, the set of transitions that could possibly synchronise with it (but might not)
-//		storage.stash("synchronous", synchronous);
-		
-		// for each trigger, the valid combinations of transitions that we need to provide events for
-		Map<String, Set<Set<ScxmlTransitionType>>> combinations = new HashMap<String,Set<Set<ScxmlTransitionType>>>();
-		for (String t : triggers.keySet()){
-			List<ScxmlTransitionType> trs = triggers.get(t);
-			//for (int i = 0; i<trs.size(); i++){
-			combinations.put(t,getCombinations(trs));
-				
-//				for (Set<ScxmlTransitionType> combination : combinations.get(t)){
-//					Event e = creatEventForTransitionSet(t, combination);
-//					if (e!=null){
-//						
-//					}
-//				}
-
-			//}
-		}
-		storage.stash("combinations", combinations);
-	}
-
-//	/**
-//	 * @param combination 
-//	 * @param combination
-//	 * @return
-//	 */
-//	private Event creatEventForTransitionSet(String triggerName, Set<ScxmlTransitionType> combination){
-//		String name = triggerName;
-//		for (ScxmlTransitionType trs : combination){
-//			name= name+"_"+Utils.getEventNames(trs, machine, generatedElements);
-//		}
-//		if (name.length() > triggerName.length()){
-//			Event e = (Event) Make.event(name);
-//			return e;
-//		}
-//		return null;
-//	}
-
-
-	private Set<Set<ScxmlTransitionType>> getCombinations(List<ScxmlTransitionType> transitionList){
-		Set<Set<ScxmlTransitionType>> combinations= new HashSet<Set<ScxmlTransitionType>>();
-		
-		//if empty return empty set of combinations
-		if (transitionList.size()==0) return combinations;
-		
-		//add the singleton with the first transition
-		HashSet<ScxmlTransitionType> singleton = new HashSet<ScxmlTransitionType>();
-		ScxmlTransitionType t0 = transitionList.get(0);
-		singleton.add(transitionList.get(0));
-		combinations.add(singleton);
-		
-		//recursion on the tail
-		Set<Set<ScxmlTransitionType>> tailCombinations = getCombinations(transitionList.subList(1, transitionList.size()));	
-		
-		//add combinations of first element with tail combinations
-		if (transitionList.size() > 1){
-			//look for valid combinations with the first transition
-			for (Set<ScxmlTransitionType> subComb : tailCombinations){
-				if (parallel(t0,subComb)){
-					Set<ScxmlTransitionType> comb = new HashSet<ScxmlTransitionType>(subComb);
-					comb.add(t0);
-					combinations.add(comb);
-				}
-			}
-			//finished
-		}
-		
-		//add tail combinations without first element
-		combinations.addAll(tailCombinations);
-		
-		return combinations;
-	}
-	
-	/**
-	 * returns true if the transition is parallel with all the transitions in the collection
-	 * @param tr : scxmlTransition
-	 * @param trSet : Set<ScxmlTransitionType>
-	 * @return 
-	 */
-	private boolean parallel(ScxmlTransitionType tr, Set<ScxmlTransitionType> trSet) {
-		for (ScxmlTransitionType t2 : trSet){
-			if (!parallel(tr,t2)) return false;
-		}
-		return true;
-	}
-	
-
-	/**
-	 * returns true if 2 transitions are in parallel regions of statemachines
-	 *  and neither are initial transitions
-	 * @param tr
-	 * @param t2
-	 * @return
-	 */
-	private boolean parallel(ScxmlTransitionType t1, ScxmlTransitionType t2) {
-		if (initialTransition(t1) || initialTransition(t2)) return false;
-		EObject trParent = t1.eContainer();
-		while (trParent!=null){
-			EObject trGrandParent = trParent.eContainer();
-			if (trGrandParent instanceof ScxmlParallelType){
-				for (ScxmlStateType state : ((ScxmlParallelType)trGrandParent).getState()){
-					if (state!=trParent && contains(state, t2)){
-						return true;
-					}
-				}
-			}
-			trParent = trGrandParent;
-		}
-		return false;
-	}
-
-	/**
-	 * @param t1
-	 * @param trParent
-	 * @return
-	 */
-	private boolean initialTransition(ScxmlTransitionType t1) {
-		if (t1.eContainer() instanceof ScxmlInitialType){
-			return true;			
-		}else{
-			return false;
-		}
-	}
-
-
-	/**
-	 * @param state
-	 * @param t2
-	 * @return
-	 */
-	private boolean contains(EObject p, EObject e) {
-		TreeIterator<EObject> it = p.eAllContents();
-		while (it.hasNext()){
-			EObject next = it.next(); 
-			if (next == e) return true;
-		}
-		return false;
 	}
 
 
@@ -306,14 +149,54 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		refinement.setComment(comment);
 		return refinement;
 	}
-	
+
+	/**
+	 * calculate trigger data for the Scxml model
+	 * 
+	 * @param scxml
+	 * @throws Exception 
+	 */
+	private Map<String, Trigger> findTriggers(ScxmlScxmlType scxml) throws Exception {
+		Map<String, Trigger> triggers = new HashMap<String,Trigger>();
+		//iterate over the entire model looking for transitions
+		//(trigger names are defined by string attribute 'event' of a transition and
+		// also by a transition's collection of ScxmlRaiseType elements).
+		TreeIterator<EObject> it = scxml.eAllContents();
+		while (it.hasNext()){
+			EObject next = it.next(); 
+			if (next instanceof ScxmlTransitionType){ 
+				ScxmlTransitionType scxmlTransition = (ScxmlTransitionType)next;
+				
+				//record any trigger that triggers this transition (including the null trigger)
+				String triggerName = scxmlTransition.getEvent();
+				if (triggerName==null || triggerName.trim().length()==0) triggerName = "null"; //make sure it is not an empty identifier
+				Trigger trigger = triggers.get(triggerName);
+				if (trigger == null){
+					trigger = new Trigger(triggerName);
+					triggers.put(triggerName, trigger);
+				}		
+				trigger.addTriggeredTransition(scxmlTransition);
+					
+				//record any triggers raised by this transition
+				EList<ScxmlRaiseType> raises = scxmlTransition.getRaise();
+				for (ScxmlRaiseType raise : raises){
+					String raisedTriggerName = raise.getEvent();
+					Trigger raisedTrigger = triggers.get(raisedTriggerName);
+					if (raisedTrigger == null){
+						raisedTrigger = new Trigger(raisedTriggerName);
+						triggers.put(raisedTriggerName, raisedTrigger);
+					}		
+					raisedTrigger.addRaisedByTransition(raise);
+				}
+			}
+		}	
+		return triggers;
+	}
 	
 	
 	/*********************************************************
 	 * The remainder generates the basis context and machine
 	 *********************************************************/
-
-	
 	
 	/**
 	 * @return
@@ -374,49 +257,58 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		Action e1_a1 = (Action) Make.action(Strings.e1_a1_Name, Strings.e1_a1_Action, Strings.e1_a1_Comment);
 		e1.getActions().add(e1_a1);
 		basis.getEvents().add(e1);
-
-		Event e2 = (Event) Make.event(Strings.futureInternalTriggersEventName);
-		Parameter p2 = (Parameter) Make.parameter(Strings.raisedInternalTriggersParameterName, Strings.raisedInternalTriggersParameterComment);
-		e2.getParameters().add(p2);
-		Guard e2_g1 = (Guard) Make.guard(Strings.e2_g1_Name, false, Strings.e2_g1_Predicate, Strings.e2_g1_Comment);
-		e2.getGuards().add(e2_g1);
-		Action e2_a1 = (Action) Make.action(Strings.e2_a1_Name, Strings.e2_a1_Action, Strings.e2_a1_Comment);
-		e2.getActions().add(e2_a1);
-		basis.getEvents().add(e2);
 		
 		Event e3 = (Event) Make.event(Strings.consumeExternalTriggerEventName);
-		Parameter p3 = (Parameter) Make.parameter(Strings.consumedExternalTriggerParameterName, Strings.consumedExternalTriggerParameterComment);
-		e3.getParameters().add(p3);
+		Parameter p3_1 = (Parameter) Make.parameter(Strings.consumedExternalTriggerParameterName, Strings.consumedExternalTriggerParameterComment);
+		e3.getParameters().add(p3_1);
+		Parameter p3_2 = (Parameter) Make.parameter(Strings.raisedInternalTriggersParameterName, Strings.raisedInternalTriggersParameterComment);
+		e3.getParameters().add(p3_2);
 		Guard e3_g1 = (Guard) Make.guard(Strings.e3_g1_Name, false, Strings.e3_g1_Predicate, Strings.e3_g1_Comment);
 		e3.getGuards().add(e3_g1);
 		Guard e3_g2 = (Guard) Make.guard(Strings.e3_g2_Name, false, Strings.e3_g2_Predicate, Strings.e3_g2_Comment);
 		e3.getGuards().add(e3_g2);
 		Guard e3_g3 = (Guard) Make.guard(Strings.e3_g3_Name, false, Strings.e3_g3_Predicate, Strings.e3_g3_Comment);
 		e3.getGuards().add(e3_g3);
+		Guard e3_g4 = (Guard) Make.guard(Strings.raisedInternalTriggersGuardName, false, Strings.raisedInternalTriggersGuardPredicate, Strings.raisedInternalTriggersGuardComment);
+		e3.getGuards().add(e3_g4);
 		Action e3_a1 = (Action) Make.action(Strings.e3_a1_Name, Strings.e3_a1_Action, Strings.e3_a1_Comment);
 		e3.getActions().add(e3_a1);
 		Action e3_a2 = (Action) Make.action(Strings.e3_a2_Name, Strings.e3_a2_Action, Strings.e3_a2_Comment);
 		e3.getActions().add(e3_a2);
+		Action e3_a3 = (Action) Make.action(Strings.raisedInternalTriggersActionName, Strings.raisedInternalTriggersActionAction, Strings.raisedInternalTriggersActionComment);
+		e3.getActions().add(e3_a3);
 		basis.getEvents().add(e3);
 		
 		Event e4 = (Event) Make.event(Strings.consumeInternalTriggerEventName);
 		Parameter p4 = (Parameter) Make.parameter(Strings.consumedInternalTriggerParameterName, Strings.consumedInternalTriggerParameterComment);
-		e4.getParameters().add(p4);		
+		e4.getParameters().add(p4);	
+		Parameter p4_2 = (Parameter) Make.parameter(Strings.raisedInternalTriggersParameterName, Strings.raisedInternalTriggersParameterComment);
+		e4.getParameters().add(p4_2);
 		Guard e4_g1 = (Guard) Make.guard(Strings.e4_g1_Name, false, Strings.e4_g1_Predicate, Strings.e4_g1_Comment);
 		e4.getGuards().add(e4_g1);
 		Guard e4_g2 = (Guard) Make.guard(Strings.e4_g2_Name, false, Strings.e4_g2_Predicate, Strings.e4_g2_Comment);
 		e4.getGuards().add(e4_g2);
+		Guard e4_g3 = (Guard) Make.guard(Strings.raisedInternalTriggersGuardName, false, Strings.raisedInternalTriggersGuardPredicate, Strings.raisedInternalTriggersGuardComment);
+		e4.getGuards().add(e4_g3);
 		Action e4_a1 = (Action) Make.action(Strings.e4_a1_Name, Strings.e4_a1_Action, Strings.e4_a1_Comment);
 		e4.getActions().add(e4_a1);
 		Action e4_a2 = (Action) Make.action(Strings.e4_a2_Name, Strings.e4_a2_Action, Strings.e4_a2_Comment);
 		e4.getActions().add(e4_a2);
+//		Action e4_a3 = (Action) Make.action(Strings.raisedInternalTriggersActionName, Strings.raisedInternalTriggersActionAction, Strings.raisedInternalTriggersActionComment);
+//		e4.getActions().add(e4_a3);
 		basis.getEvents().add(e4);
 		
 		Event e5 = (Event) Make.event(Strings.untriggeredEventName);
+		Parameter p5_1 = (Parameter) Make.parameter(Strings.raisedInternalTriggersParameterName, Strings.raisedInternalTriggersParameterComment);
+		e5.getParameters().add(p5_1);
 		Guard e5_g1 = (Guard) Make.guard(Strings.e5_g1_Name, false, Strings.e5_g1_Predicate, Strings.e5_g1_Comment);
 		e5.getGuards().add(e5_g1);
+		Guard e5_g2 = (Guard) Make.guard(Strings.raisedInternalTriggersGuardName, false, Strings.raisedInternalTriggersGuardPredicate, Strings.raisedInternalTriggersGuardComment);
+		e5.getGuards().add(e5_g2);
 		Action e5_a1 = (Action) Make.action(Strings.e5_a1_Name, Strings.e5_a1_Action, Strings.e5_a1_Comment);
 		e5.getActions().add(e5_a1);
+		Action e5_a2 = (Action) Make.action(Strings.raisedInternalTriggersActionName, Strings.raisedInternalTriggersActionAction, Strings.raisedInternalTriggersActionComment);
+		e5.getActions().add(e5_a2);
 		basis.getEvents().add(e5);
 		
 		Event e6 = (Event) Make.event(Strings.completionEventName);
@@ -425,7 +317,6 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		Action e6_a1 = (Action) Make.action(Strings.e6_a1_Name, Strings.e6_a1_Action, Strings.e6_a1_Comment);
 		e6.getActions().add(e6_a1);
 		basis.getEvents().add(e6);
-		
 		
 		return basis;
 	}
