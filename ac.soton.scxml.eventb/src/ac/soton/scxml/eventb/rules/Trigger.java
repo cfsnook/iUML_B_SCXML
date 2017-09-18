@@ -105,13 +105,6 @@ public class Trigger {
 		return Collections.unmodifiableSet(raisedByTransitions);
 	}
 	
-//	public Map<Integer,Set<ScxmlTransitionType>> getTransitionCombinations()	throws Exception{
-//		if (finalised == false) throw new Exception("Attempt to read Trigger that has not been finalised");
-//		if (combinations==null){
-//			
-//		}
-//		return Collections.unmodifiableMap(combinations);
-//	}
 	
 	public Set<Set<ScxmlTransitionType>> getTransitionCombinations(int level) {
 		finalised = true;
@@ -145,7 +138,12 @@ public class Trigger {
 				}
 			}			
 		}
-		return Collections.unmodifiableSet(combinations.get(level));
+		if (combinations.get(level)== null){
+			return Collections.emptySet();
+		}else{
+			return Collections.unmodifiableSet(combinations.get(level));
+		}
+		
 	}
 		
 	public boolean isExternal() {

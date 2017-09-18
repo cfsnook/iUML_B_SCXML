@@ -39,6 +39,7 @@ import org.eventb.emf.core.EventBNamed;
 import org.eventb.emf.core.Project;
 import org.eventb.emf.core.machine.Convergence;
 import org.eventb.emf.core.machine.Event;
+import org.eventb.emf.core.machine.Guard;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
 
@@ -142,30 +143,6 @@ public class Utils {
 		return depth;
 	}
 	
-	/**
-	 * Finds an event for the given transitions combination in the given machine or descriptors
-	 *  if no such event is found a new event is created and added to the machine
-	 *  
-	 * @param machine
-	 * @param translatedElements
-	 * @param triggerName
-	 * @param combi
-	 * @return
-	 */
-	public static Set<Event> getOrCreateInitialEvents(Refinement ref, List<TranslationDescriptor> descriptors, Trigger trigger, Set<ScxmlTransitionType> combi) {
-		Set<Event> ret = new HashSet<Event>();
-		
-		printCombi("getOrCreateInitialEvents",combi, ref);
-		for (ScxmlTransitionType tr : combi){
-			List<String> eventNames = getInitialEventNames(tr, ref.machine, descriptors);
-			if (eventNames==null) continue;
-			for (String eventName : eventNames){
-				Event ev = getOrCreateEvent(ref.machine, false, descriptors,eventName);
-				ret.add(ev);
-			}
-		}
-		return ret;
-	}
 	
 	/**
 	 * Finds an event for the given transitions combination in the given machine or descriptors
@@ -181,7 +158,7 @@ public class Utils {
 		printCombi("getOrCreateEvent",combi, ref);
 		String eventName = getCombiEventName(trigger.getName(), combi);		//PARAMETERS REMOVED... ref.machine, descriptors,
 		Event ev = getOrCreateEvent(ref.machine, false, descriptors,eventName);
-		String refinedEventName = getRefinesName(ref, descriptors, trigger, combi);
+		String refinedEventName = getRefinesName(ref, trigger, combi);
 		if (!ev.getRefinesNames().contains(refinedEventName)){
 			ev.getRefinesNames().add(refinedEventName);
 		}
@@ -189,6 +166,11 @@ public class Utils {
 			ev.setExtended(false);
 		}else{
 			ev.setExtended(true);
+		}
+		//add trigger guard at the correct refinement level
+		if (!"null".equals(trigger.getName()) && ref.level==trigger.getRefinementLevel()){
+			Guard trig = (Guard) Make.guard(Strings.trigGd_Name, false, Strings.trigGd_Predicate(trigger), Strings.trigGd_Comment);
+			ev.getGuards().add(trig);
 		}
 		return ev;
 	}
@@ -202,7 +184,7 @@ public class Utils {
 	 * @param combi
 	 * @return
 	 */
-	private static String getRefinesName(Refinement ref, List<TranslationDescriptor> descriptors,  Trigger trigger, Set<ScxmlTransitionType> combi) {
+	private static String getRefinesName(Refinement ref, Trigger trigger, Set<ScxmlTransitionType> combi) {
 		//set the event refinement up
 		String refinedEventName = null;						
 		Set<ScxmlTransitionType> refinedCombi = findRefinedCombi(trigger, combi, ref);
@@ -275,57 +257,14 @@ public class Utils {
 		String eventName = (triggerName == null || triggerName.length()==0 || "null".equals(triggerName))? "" : triggerName;
 		for (ScxmlTransitionType tr : combi){
 			if (tr.eContainer() instanceof ScxmlStateType){
-				String trName = Utils.getEventName(tr);
+				String trName = Utils.getBasicEventName(tr);
 				eventName = eventName.length()==0 ?  trName : eventName+ "__" + trName;
 			}
 		}
 		return eventName;
 	}
 	
-	/**
-	 * This finds all the events that are elaborated by transitions that target the real parent containing super-state
-	 * of the given EObject (which is assumed to be an element in an SCXML state chart)
-	 * (n.b. the real parent super-state is not a state representing a parallel region but a container of the parallel)
-	 * 
-	 * @param scxmlEObject - an element of a nested SCXML state chart
-	 * @param machine	-	the relevant machine for the refinement level
-	 * @param generatedElements - new elements to also be searched (machine must be the parent)
-	 * @return
-	 */
-	public static List<Event> findIncomerEvents(EObject scxmlEObject, Machine machine, List<TranslationDescriptor> generatedElements) {
-		List<Event> eventList = new ArrayList<Event>();
-		// find scxml container,
-		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, scxmlEObject);
-		// find scxml parent state (i.e. the real parent state, not a region)
-		EObject realScxmlParentState = scxmlEObject.eContainer();
-		while (!(realScxmlParentState instanceof ScxmlStateType && 
-				(		realScxmlParentState.eContainer() instanceof ScxmlStateType ||
-						realScxmlParentState.eContainer() instanceof ScxmlScxmlType || 
-						realScxmlParentState.eContainer() ==null))){
-			realScxmlParentState = realScxmlParentState.eContainer();
-		}
-		String scxmlParentStateName = ((ScxmlStateType)realScxmlParentState).getId();
-		if (scxmlParentStateName == null) return eventList;
-		// search contents for transitions that target the real scxml parent state
-		for (EObject possible : Find.eAllContents(scxmlContainer, ScxmlPackage.Literals.SCXML_TRANSITION_TYPE)){
-			if (((ScxmlTransitionType)possible).getTarget().contains(scxmlParentStateName)){
-				// find names of events for this transition
-				List<String> eventNames = getEventNames(((ScxmlTransitionType)possible), machine, generatedElements);
-				// find events similarly named in machine and/or generation descriptors
-				for (String eventName : eventNames){
-					Event ev = getOrCreateEvent(machine, true, generatedElements, eventName);
-					if (ev!=null && !eventList.contains(ev)) {
-						eventList.add(ev);
-					}
-				}
-			}
-		}
-		if (scxmlContainer.getInitial().contains(scxmlParentStateName)){
-			Event ev = getOrCreateEvent(machine, true, generatedElements, "INITIALISATION");
-			eventList.add(ev);
-		}
-		return eventList;
-	}
+
 	
 	/**
 	 * This finds all the events that are elaborated by transitions that target the real parent containing super-state
@@ -351,7 +290,7 @@ public class Utils {
 		// for transitions that source the real scxml parent state
 		for (ScxmlTransitionType tr : ((ScxmlStateType)realScxmlParentState).getTransition()){
 			// find names of events for this transition
-			String eventName = getEventName(tr);
+			String eventName = getBasicEventName(tr);
 			// find events similarly named in machine and/or generation descriptors
 			Event ev = getOrCreateEvent(machine, true, generatedElements, eventName);
 			if (ev!=null && !eventList.contains(ev)) {
@@ -360,39 +299,6 @@ public class Utils {
 		}	
 
 		return eventList;
-	}
-	
-	/**
-	 * This gets a list of event names that should be elaborated by an iUML-B transition when it is generated from the given
-	 * INITIAL ScxmlTransition. 
-	 * DO NOT USE THIS FOR NON-INITIAL TRANSITIONS -> returns null if the source is not a real ScxmlInitialType
-	 * 
-	 * the event names are obtained (cumulatively) by the following methods:
-	 * 
-	 * if the transition is in an initial state at the outer state chart level a single name, INITIALISATION, is returned 
-	 * if the transition is in an initial state of a nested state chart the names of all the events that
-	 *    are associated with incoming transitions to the parent state are used.
-	 * 
-	 * @param scxmlTransition
-	 * @param machine			- the relevant machine for the refinement level (used for nested initial transitions to find incomers)
-	 * @param generatedElements - new elements to also be searched (machine must be the parent)  (used for nested initial transitions to find incomers)
-	 * @return
-	 */
-	
-	public static List<String> getInitialEventNames(ScxmlTransitionType scxmlTransition, Machine machine, List<TranslationDescriptor> generatedElements){
-		if (!(scxmlTransition.eContainer() instanceof ScxmlInitialType)) return null;	
-		List<String> eventNames = new ArrayList<String>();
-		//add initialisation events if source is an initial state
-
-		if (getStateContainer(scxmlTransition)==null){
-			eventNames.add("INITIALISATION");
-		}else{
-			//when source is a nested Initial we need to elaborate all the parents incomers events
-			for (Event ev : findIncomerEvents(scxmlTransition, machine, generatedElements)){
-				eventNames.add(ev.getName());
-			}
-		}
-		return eventNames;
 	}
 
 	
@@ -410,7 +316,7 @@ public class Utils {
 	 * @param scxmlTransition
 	 * @return
 	 */
-	public static String getEventName(ScxmlTransitionType scxmlTransition){
+	public static String getBasicEventName(ScxmlTransitionType scxmlTransition){
 
 		EObject source = scxmlTransition.eContainer();
 		
@@ -440,29 +346,6 @@ public class Utils {
 			eventName=eventName+"_"+targetName;
 		}
 		return eventName;
-	}
-	
-	/**
-	 * This gets a list of event names that should be elaborated by an iUML-B transition when it is generated from the given
-	 * ScxmlTransition. 
-	 * 
-	 * It either calls getEventName(scxmlTransition) for normal transitions (source is a proper state)
-	 * or calls getInitialEventNames(scxmlTransition, machine, generatedElements) for initial transitions (source is a initial blob)
-	 * for anything else returns an empty list
-	 * 
-	 * @param scxmlTransition
-	 * @param machine	-	the relevant machine for the refinement level (Only used for nested initial transitions to find incomers)
-	 * @param generatedElements - new elements to also be searched (machine must be the parent)  (Only used for nested initial transitions to find incomers)
-	 * @return
-	 */
-	public static List<String> getEventNames(ScxmlTransitionType scxmlTransition, Machine machine, List<TranslationDescriptor> generatedElements){
-		List<String> eventNames = new ArrayList<String>();
-		if (scxmlTransition.eContainer() instanceof ScxmlStateType){
-			eventNames.add(getEventName(scxmlTransition));
-		}else if (scxmlTransition.eContainer() instanceof ScxmlInitialType) {
-			eventNames.addAll(getInitialEventNames(scxmlTransition, machine, generatedElements));
-		}
-		return eventNames;
 	}
 	
 	
@@ -537,6 +420,14 @@ public class Utils {
 		return scxmlContainer.getName()+"_"+refinementLevel;
 	}
 
+	/**
+	 * @param scxml
+	 * @param i
+	 * @return
+	 */
+	public static String getContextName(ScxmlScxmlType scxmlContainer, int refinementLevel) {
+		return getMachineName(scxmlContainer,refinementLevel)+"_ctx";
+	}
 
 	/**
 	 * gets the type set of an ScxmlData item
@@ -545,12 +436,21 @@ public class Utils {
 	 */
 	public static String getType(ScxmlDataType scxml) {
 		String type = (String) new IumlbScxmlAdapter(scxml).getAnyAttributeValue("type");
-		if (type==null || type.length()==0) {
+		type = type.trim();
+		//TODO: Use rodin keyboard converter here
+		if (type!=null && type.length()>0) {
+			if ("NAT".equals(type)) type = "\u2115";
+			if ("INT".equals(type)) type = "\u2124";
+		}else{
 			//fallback if no iumlb:type attribute provided
 			String expr = scxml.getExpr();
-			if (expr==null) type = "<null>";
-			if ("true".equals(expr) || "false".equals(expr)){
-				type = "BOOL";
+			try{ Integer.parseInt(expr);
+				type = "\u2124"; //Integer
+			}catch (NumberFormatException e) {
+				if (expr==null) type = "<null>";
+				if ("true".equals(expr) || "false".equals(expr)){
+					type = "BOOL";
+				}	
 			}
 		}
 		return Strings.TYPE_PREDICATE(scxml.getId(),type);
@@ -576,6 +476,9 @@ public class Utils {
 		}
 		System.out.println("xxxxxxxxxxxxxxxxx");
 	}
+
+
+
 
 
 }

@@ -16,6 +16,8 @@ import org.eclipse.osgi.util.NLS;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlAssignType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlDataType;
 
+import ac.soton.scxml.eventb.rules.Trigger;
+
 public class Strings {
 
 	private static final String BUNDLE_NAME = "ac.soton.scxml.eventb.strings.Strings"; //$NON-NLS-1$
@@ -71,6 +73,7 @@ public class Strings {
 	}
 
 	public static String ASSIGN_ACTION;
+
 
 	public static String ASSIGN_ACTION(ScxmlAssignType assign) {
 		return bind(ASSIGN_ACTION,
@@ -145,6 +148,9 @@ public class Strings {
 	}
 	
 
+	public static  String generatedFromFileComment(String fileName){
+		return "(generated from SCXML file: "+fileName+")";
+	}
 	
 	public static final  String basisContextName = "basis";	
 	public static final  String triggerSetName = "SCXML_TRIGGER";
@@ -153,6 +159,34 @@ public class Strings {
 	public static final  String triggerPartitionAxiomName = "axm1";
 	public static final  String triggerPartitionAxiomPredicate = "partition("+triggerSetName+","+internalTriggersName+","+externalTriggersName+")";	
 
+	// axioms added to the extended context for each refinement level
+
+	public static String externalTriggersName(int i) {
+		return externalTriggersName+i;
+	}
+	
+	public static String internalTriggersName(int i) {
+		return internalTriggersName+i;
+	}
+	
+	public static String externalTriggerAxiomName(int i) {
+		return externalTriggersName+i;
+	}
+	public static String internalTriggerAxiomName(int i) {
+		return internalTriggersName+i;
+	}
+	public static String externalTriggerDefinitionAxiomPredicate(int i, String externals) {
+		String previous = i==0? externalTriggersName : externalTriggersName+(i-1);
+		String newTriggers = externals == null? "" : ",{"+externals+"}";
+		return "partition("+previous+","+externalTriggersName+i+newTriggers+")";
+	}
+	public static String internalTriggerDefinitionAxiomPredicate(int i, String internals) {
+		String previous = i==0? internalTriggersName : internalTriggersName+(i-1);
+		String newTriggers = internals == null? "" : ",{"+internals+"}";
+		return "partition("+previous+","+internalTriggersName+i+newTriggers+")";
+	}
+	
+	
 	public static final  String basisMachineName = "basis";
 	public static final  String externalQueueName = "SCXML_eq";
 	public static final  String internalQueueName = "SCXML_iq";
@@ -254,6 +288,17 @@ public class Strings {
 	public static final  String e4_a2_Name = "SCXML_consumeInternalTrigger";
 	public static final  String e4_a2_Action = internalQueueName+" \u2254 ("+internalQueueName+" \u222a "+raisedInternalTriggersParameterName+") \u2216 {"+consumedInternalTriggerParameterName+"}";
 	public static final  String e4_a2_Comment = "";
+
+	//for use in events that define a specific trigger:
+	public static final String trigGd_Name = "SCXML_trigger";
+	public static String trigGd_Predicate(Trigger t) {
+		String pred = "";
+		pred = t.isInternal()? consumedInternalTriggerParameterName : consumedExternalTriggerParameterName ;
+		pred = pred + " = " + t.getName();
+		return pred;
+	}
+	public static final String trigGd_Comment = "triggered transition";
+	
 	//e5
 	public static final  String untriggeredEventName = "SCXML_futureUntriggeredTransitionSet";
 	public static final  String e5_g1_Name = "SCXML_isNotComplete";
@@ -270,5 +315,5 @@ public class Strings {
 	public static final  String e6_a1_Name = "SCXML_Complete";
 	public static final  String e6_a1_Action = completionFlagName+" \u2254 TRUE";
 	public static final  String e6_a1_Comment = "";
-
+	
 }

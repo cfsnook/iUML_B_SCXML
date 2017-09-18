@@ -23,6 +23,7 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlRaiseType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlTransitionType;
+import org.eventb.emf.core.EventBNamedCommentedComponentElement;
 import org.eventb.emf.core.Project;
 import org.eventb.emf.core.context.Axiom;
 import org.eventb.emf.core.context.CarrierSet;
@@ -65,7 +66,7 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		int depth = getRefinementDepth(sourceElement);
 		List<TranslationDescriptor> ret = new ArrayList<TranslationDescriptor>();
 		String fileName = scxml.eResource().getURI().toPlatformString(true);
-		String machineComment ="(generated from SCXML file: "+fileName+")";
+
 		String statechartName = scxml.getName()+"_sm";
 		Project project = Utils.findProject(sourceElement);
 		
@@ -74,19 +75,41 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		ret.add(Make.descriptor(project, components, context ,1));
 		
 		//get the basis Machine
-		Machine machine=null;
-		machine =  getBasisMachine(context);
+		Machine machine = getBasisMachine(context);
 		ret.add(Make.descriptor(project, components, machine ,1));
 		
 		//create the refinement chain of machines
 		for (int i=0; i<=depth; i++){
 			
 			// make a new machine by refining the previous level
-			machine = refine (scxml, machine, Utils.getMachineName(scxml,i), machineComment);
-			// all levels see the basis context
-			machine.getSeesNames().add(Strings.basisContextName);
+			machine = (Machine) refine (scxml, machine, Utils.getMachineName(scxml,i), Strings.generatedFromFileComment(fileName));
+			//set all events as extended rather than copied and add extra guards to 'future' events
+			for (Event e : machine.getEvents()){
+				if (!e.getRefines().isEmpty()){
+					e.setExtended(true);
+					e.getParameters().clear();
+					e.getGuards().clear();
+					e.getActions().clear();
+					//add guards for next level
+					if (Strings.futureExternalTriggersEventName.equals(e.getName())){
+						Guard e1_g1 = (Guard) Make.guard(Strings.e1_g1_Name+i, false, Strings.e1_g1_Predicate+i, Strings.e1_g1_Comment);
+						e.getGuards().add(e1_g1);
+					}
+				}else{
+					System.out.println("Non refined event: "+e.getName());
+				}
+			}
+			
 			//create the descriptor to put the machine in the project
 			ret.add(Make.descriptor(project, components, machine ,1));
+			// make a new context by refining the previous level
+			context = (Context) refine (scxml, context, Utils.getContextName(scxml,i), Strings.generatedFromFileComment(fileName));
+			//create the descriptor to put the machine in the project
+			ret.add(Make.descriptor(project, components, context ,1));
+			
+			// all levels see the corresponding context which extends the basis context
+			machine.getSeesNames().add(context.getName()); //Strings.basisContextName);
+
 			//if this is the first level add a state-machine (subsequent levels will copy it by refinement)
 			if (i==0){
 				Statemachine statemachine = (Statemachine) Make.statemachine(statechartName, tkind, "");
@@ -108,47 +131,68 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 				}
 			}
 			
-			//add any external trigger raising events needed at this level
+			//define triggers in contexts and 
+			// add any external trigger raising events needed at this level
+			Constant futureinternals = (Constant) Make.constant(Strings.internalTriggersName(i), "");
+			context.getConstants().add(futureinternals);
+			Constant futureexternals = (Constant) Make.constant(Strings.externalTriggersName(i), "");
+			context.getConstants().add(futureexternals);
+			String internals = null;
+			String externals = null;			
 			for (String tname : triggers.keySet()){
 				if (tname == "null") continue;
 				Trigger t = triggers.get(tname);
-				if (t.isExternal() && t.getRefinementLevel()==i){
-					Event e = (Event) Make.event("ExternalTriggerEvent_"+t.getName());
-					e.getRefinesNames().add("SCXML_futureExternalTrigger");
-					e.setExtended(true);
-					Guard g = (Guard) Make.guard(
-							Strings.specificRaisedExternalTriggerGuardName, false, 
-							Strings.specificRaisedExternalTriggerGuardPredicate(t.getName()), 
-							Strings.specificRaisedExternalTriggerGuardComment);
-					e.getGuards().add(g);
-					machine.getEvents().add(e);
+				if (t.getRefinementLevel()==i){
+					Constant trigConst = (Constant) Make.constant(t.getName(), "trigger");
+					context.getConstants().add(trigConst);
+					if (t.isExternal() ){
+						externals=externals==null? t.getName(): externals+","+t.getName();
+						Event e = (Event) Make.event("ExternalTriggerEvent_"+t.getName());
+						e.getRefinesNames().add(Strings.futureExternalTriggersEventName);
+						e.setExtended(true);
+						Guard g = (Guard) Make.guard(
+								Strings.specificRaisedExternalTriggerGuardName, false, 
+								Strings.specificRaisedExternalTriggerGuardPredicate(t.getName()), 
+								Strings.specificRaisedExternalTriggerGuardComment);
+						e.getGuards().add(g);
+						machine.getEvents().add(e);
+					}else{
+						internals=internals==null? t.getName(): internals+","+t.getName();
+					}
+
 				}
 			}
+			Axiom eax = (Axiom) Make.axiom(Strings.externalTriggerAxiomName(i), Strings.externalTriggerDefinitionAxiomPredicate(i, externals), "");
+			context.getAxioms().add(eax);
+			Axiom iax = (Axiom) Make.axiom(Strings.internalTriggerAxiomName(i), Strings.internalTriggerDefinitionAxiomPredicate(i, internals), "");
+			context.getAxioms().add(iax);
 		}
 		
 		
 		return ret;
 	}
 
-
 	/**
-	 * @param machine
+	 * @param component
 	 * @return
 	 */
-	private Machine refine(EObject sourceElement, Machine machine, String refineName, String comment) {
+	private EventBNamedCommentedComponentElement refine(EObject sourceElement, EventBNamedCommentedComponentElement component, String refineName, String comment) {
 		URI uri = EcoreUtil.getURI(sourceElement);
 		uri = uri.trimFragment().trimSegments(1);
-		uri = uri.appendSegment(machine.getName());
-		uri = uri.appendFileExtension("bum");
-		uri = uri.appendFragment(machine.getReference());
-		AbstractElementRefiner refiner = ElementRefinerRegistry.getRegistry().getRefiner(machine);
-		//MachineElementRefiner refiner = new MachineElementRefiner();
-		Map<EObject,EObject> copy = refiner.refine(uri, machine, null);
-		Machine refinement = (Machine) copy.get(machine);
+		uri = uri.appendSegment(component.getName());
+		uri = uri.appendFileExtension(
+				component instanceof Machine? "bum" :
+					component instanceof Context? "buc" :
+						"xmb");
+		uri = uri.appendFragment(component.getReference());
+		AbstractElementRefiner refiner = ElementRefinerRegistry.getRegistry().getRefiner(component);
+		Map<EObject,EObject> copy = refiner.refine(uri, component, null);
+		EventBNamedCommentedComponentElement refinement = (EventBNamedCommentedComponentElement) copy.get(component);
 		refinement.setName(refineName);
-		refinement.setComment(comment);
+		refinement.setComment(comment);		
 		return refinement;
 	}
+	
 
 	/**
 	 * calculate trigger data for the Scxml model

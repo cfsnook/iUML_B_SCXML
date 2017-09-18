@@ -13,8 +13,6 @@ package ac.soton.scxml.eventb.rules;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlAssignType;
@@ -34,6 +32,8 @@ import ac.soton.emf.translator.TranslationDescriptor;
 import ac.soton.emf.translator.configuration.IRule;
 import ac.soton.emf.translator.utils.Find;
 import ac.soton.eventb.statemachines.AbstractNode;
+import ac.soton.eventb.statemachines.Initial;
+import ac.soton.eventb.statemachines.State;
 import ac.soton.eventb.statemachines.Statemachine;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.eventb.statemachines.Transition;
@@ -44,20 +44,23 @@ import ac.soton.scxml.eventb.utils.Refinement;
 import ac.soton.scxml.eventb.utils.Utils;
 
 /**
- * This rules translates SCXML transitions, excluding initial transitions,
- * into iUML-B transitions.
+ * This rules translates SCXML initial transitions
+ * It must fire late as it uses what has been generated for normal transitions
  * 
  * @author cfs
  *
  */
-public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implements IRule {
+public class ScxmlInitialTransitionTypeRule extends AbstractSCXMLImporterRule implements IRule {
 
 	private List<Refinement> refinements = new ArrayList<Refinement>();
+	
+	//This must be done after normal transitions as we will look at what has been generated for incomers.
+	public boolean fireLate(){return true;}
 
 	@Override
 	public boolean enabled(final EObject sourceElement) throws Exception  {
 		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
-		return scxmlContainer!=null && !(sourceElement.eContainer() instanceof ScxmlInitialType);
+		return scxmlContainer!=null && sourceElement.eContainer() instanceof ScxmlInitialType;
 	}
 	
 	@Override
@@ -82,10 +85,8 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			if (ref.statemachine == null) 
 				return false;
 			
-			EObject container = sourceElement.eContainer();
-			String sourceStateName = container instanceof ScxmlStateType? 
-										((ScxmlStateType)sourceElement.eContainer()).getId() :
-										null;
+			String sourceStateName = sourceElement.eContainer() instanceof ScxmlInitialType? ref.statemachine.getName()+"_initialState" :
+											null;
 			ref.source = (AbstractNode) Find.element(m, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, sourceStateName);
 			if (ref.source == null) 
 				return false;	
@@ -100,7 +101,7 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 
 	@Override
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> translatedElements) throws Exception {
-		Map<String, Trigger> triggerStore = (Map<String, Trigger>) storage.fetch("triggers");
+		//Map<String, Trigger> triggerStore = (Map<String, Trigger>) storage.fetch("triggers");
 		ScxmlTransitionType scxmlTransition = ((ScxmlTransitionType) sourceElement);
 
 		//TODO: calculate finalised
@@ -112,51 +113,27 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			Transition transition = Make.transition(ref.source, ref.target, "");
 			ref.statemachine.getTransitions().add(transition);
 			
-			//This next section creates the Event-B events that represent the possible Scxml transition synchronisations
-			//
-			// (triggers are called events in SCXML). 
-			String scxmlTransitionEvent = scxmlTransition.getEvent();	
-			if (scxmlTransitionEvent==null || scxmlTransitionEvent.trim().length() == 0){ scxmlTransitionEvent ="null";}
-
-			//FIXME: currently we support multiple triggers of a transition - possibly this is not needed? 
-			String[] triggerNames = scxmlTransitionEvent.split(" ");
-			System.out.println("triggers: "+triggerNames.length);
-			for (String triggerName : triggerNames){
-				System.out.println("trigger[0]: "+triggerName);
-				Trigger trigger = triggerStore.get(triggerName);
-				if (trigger==null){
-					continue;
-				}
-				
-				for (Set<ScxmlTransitionType> combi : trigger.getTransitionCombinations(ref.level)){
-					if (combi != null && combi.contains(scxmlTransition)) { 
-						//create/find an event to elaborate
-						Event ev = Utils.getOrCreateEvent(ref, translatedElements, trigger, combi);
-						transition.getElaborates().add(ev);
-					}
-				}
+			transition.getElaborates().addAll(findElaboratedEvents(transition));
 					
-				//add a guard to define the triggers that are raised by this transition
-				String raiseList = "";
-				// set parameter value for raised triggers
-				for (ScxmlRaiseType raise : scxmlTransition.getRaise()){
-					if(new IumlbScxmlAdapter(raise).getRefinementLevel() <= ref.level){
-						raiseList = raiseList.length()==0? raise.getEvent() : ","+raise.getEvent();
-					}
-				}	
-				// no guard needed if there are no raised triggers.. unless..
-				// refinement has been finalised.. in which case we specify that no future triggers will ever be raised by this event
-				if (!"".equals(raiseList) || finalised==true){  
-					raiseList = "".equals(raiseList)? "\u2205" : "{"+raiseList+" }";
-					Guard guard =  (Guard) Make.guard(
-							Strings.specificRaisedInternalTriggersGuardName,false,
-							Strings.specificRaisedInternalTriggersGuardPredicate(raiseList, finalised),
-							Strings.specificRaisedInternalTriggersGuardComment); 
-					transition.getGuards().add(guard);
+			//add a guard to define the triggers that are raised by this transition
+			String raiseList = "";
+			// set parameter value for raised triggers
+			for (ScxmlRaiseType raise : scxmlTransition.getRaise()){
+				if(new IumlbScxmlAdapter(raise).getRefinementLevel() <= ref.level){
+					raiseList = raiseList.length()==0? raise.getEvent() : ","+raise.getEvent();
 				}
-				
+			}	
+			// no guard needed if there are no raised triggers.. unless..
+			// refinement has been finalised.. in which case we specify that no future triggers will ever be raised by this event
+			if (!"".equals(raiseList) || finalised==true){  
+				raiseList = "".equals(raiseList)? "\u2205" : "{"+raiseList+" }";
+				Guard guard =  (Guard) Make.guard(
+						Strings.specificRaisedInternalTriggersGuardName,false,
+						Strings.specificRaisedInternalTriggersGuardPredicate(raiseList, finalised),
+						Strings.specificRaisedInternalTriggersGuardComment); 
+				transition.getGuards().add(guard);
 			}
-			
+				
 			//add any explicit guards of the scxml transition
 			List<IumlbScxmlAdapter> gds = new IumlbScxmlAdapter(scxmlTransition).getGuards();
 			for (IumlbScxmlAdapter gd : gds){
@@ -183,6 +160,26 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 			
 		}
 		return Collections.emptyList();
+	}
+
+	/**
+	 * @param transition
+	 */
+	protected List<Event> findElaboratedEvents(Transition transition) {
+		List<Event> ret = new ArrayList<Event>();
+		EObject parent = transition.eContainer().eContainer();
+		if (parent instanceof State){
+			for (Transition in : ((State)parent).getIncoming()){
+				if (in.getSource() instanceof State){
+					ret.addAll(in.getElaborates());
+				}else if (in.getSource() instanceof Initial){
+					ret.addAll(findElaboratedEvents(in));
+				}
+			}
+		} else {
+			
+		}
+		return ret;
 	}
 	
 }

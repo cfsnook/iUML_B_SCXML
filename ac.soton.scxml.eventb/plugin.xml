@@ -109,6 +109,11 @@
                rule_class="ac.soton.scxml.eventb.rules.ScxmlFinalTypeRule"
                source_class="ScxmlFinalType">
          </rule>
+         <rule
+               name="SCXMLIntialTransitionTypeRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlInitialTransitionTypeRule"
+               source_class="ScxmlTransitionType">
+         </rule>
       </ruleset>
    </extension>
       <extension
