@@ -100,6 +100,7 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 
 	@Override
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> translatedElements) throws Exception {
+		@SuppressWarnings("unchecked")
 		Map<String, Trigger> triggerStore = (Map<String, Trigger>) storage.fetch("triggers");
 		ScxmlTransitionType scxmlTransition = ((ScxmlTransitionType) sourceElement);
 
