@@ -177,16 +177,43 @@ public class Strings {
 	}
 	public static String externalTriggerDefinitionAxiomPredicate(int i, String externals) {
 		String previous = i==0? externalTriggersName : externalTriggersName+(i-1);
-		String newTriggers = externals == null? "" : ",{"+externals+"}";
-		return "partition("+previous+","+externalTriggersName+i+newTriggers+")";
+		if (externals == null){
+			return externalTriggersName+i+"="+previous;
+		}else{
+			return "partition("+previous+","+externalTriggersName+i+",{"+externals+"})";
+		}
 	}
 	public static String internalTriggerDefinitionAxiomPredicate(int i, String internals) {
 		String previous = i==0? internalTriggersName : internalTriggersName+(i-1);
-		String newTriggers = internals == null? "" : ",{"+internals+"}";
-		return "partition("+previous+","+internalTriggersName+i+newTriggers+")";
+		if (internals == null){
+			return internalTriggersName+i+"="+previous;
+		}else{
+			return "partition("+previous+","+internalTriggersName+i+",{"+internals+"})";
+		}
 	}
 	
-	
+	//The following two axioms were added because ProB was unable to find a solution to the trigger sets by itself
+	public static String externalProbTriggerAxiomName(int i) {
+		return externalTriggersName+"ProB"+i;
+	}
+	public static String internalProbTriggerAxiomName(int i) {
+		return internalTriggersName+"ProB"+i;
+	}
+	public static String externalProbTriggerDefinitionAxiomPredicate(int i, String allExternals) {
+		if (allExternals == null){
+			return externalTriggersName+i+"="+externalTriggersName;
+		}else{
+			return "partition("+externalTriggersName+",{"+allExternals+"}, "+externalTriggersName+i+")";
+		}
+	}
+	public static String internalProbTriggerDefinitionAxiomPredicate(int i, String allInternals) {
+		if (allInternals == null){
+			return internalTriggersName+i+"="+internalTriggersName;
+		}else{
+			return "partition("+internalTriggersName+",{"+allInternals+"}, "+internalTriggersName+i+")";
+		}
+	}
+
 	public static final  String basisMachineName = "basis";
 	public static final  String externalQueueName = "SCXML_eq";
 	public static final  String internalQueueName = "SCXML_iq";

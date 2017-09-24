@@ -78,6 +78,8 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 		Machine machine = getBasisMachine(context);
 		ret.add(Make.descriptor(project, components, machine ,1));
 		
+		String allExternals = null;
+		String allInternals = null;
 		//create the refinement chain of machines
 		for (int i=0; i<=depth; i++){
 			
@@ -145,8 +147,8 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 				if (t.getRefinementLevel()==i){
 					Constant trigConst = (Constant) Make.constant(t.getName(), "trigger");
 					context.getConstants().add(trigConst);
-					if (t.isExternal() ){
-						externals=externals==null? t.getName(): externals+","+t.getName();
+					if (t.isExternal()){
+						externals=externals==null? t.getName(): externals+"},{"+t.getName();
 						Event e = (Event) Make.event("ExternalTriggerEvent_"+t.getName());
 						e.getRefinesNames().add(Strings.futureExternalTriggersEventName);
 						e.setExtended(true);
@@ -157,18 +159,29 @@ public class ScxmlScxmlTypeRule extends AbstractSCXMLImporterRule implements IRu
 						e.getGuards().add(g);
 						machine.getEvents().add(e);
 					}else{
-						internals=internals==null? t.getName(): internals+","+t.getName();
+						internals=internals==null? t.getName(): internals+"},{"+t.getName();
 					}
-
 				}
 			}
 			Axiom eax = (Axiom) Make.axiom(Strings.externalTriggerAxiomName(i), Strings.externalTriggerDefinitionAxiomPredicate(i, externals), "");
 			context.getAxioms().add(eax);
 			Axiom iax = (Axiom) Make.axiom(Strings.internalTriggerAxiomName(i), Strings.internalTriggerDefinitionAxiomPredicate(i, internals), "");
 			context.getAxioms().add(iax);
+			if (externals!=null){
+				allExternals =  allExternals==null? externals : allExternals+"},{"+externals;
+				if (i>0){
+					Axiom eax_prob = (Axiom) Make.axiom(Strings.externalProbTriggerAxiomName(i), Strings.externalProbTriggerDefinitionAxiomPredicate(i, allExternals), "help ProB");
+					context.getAxioms().add(eax_prob);
+				}
+			}
+			if (internals!=null){
+				allInternals = allInternals==null? internals : allInternals+"},{"+internals;			
+				if (i>0){
+					Axiom iax_prob = (Axiom) Make.axiom(Strings.internalProbTriggerAxiomName(i), Strings.internalProbTriggerDefinitionAxiomPredicate(i, allInternals), "help ProB");
+					context.getAxioms().add(iax_prob);
+				}
+			}
 		}
-		
-		
 		return ret;
 	}
 
