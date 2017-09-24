@@ -168,9 +168,10 @@ public class Utils {
 			ev.setExtended(true);
 		}
 		//add trigger guard at the correct refinement level
-		if (!"null".equals(trigger.getName()) && ref.level==trigger.getRefinementLevel()){
+		//(this is done as a descriptor so that the translator can decide whether it is needed (it may already be there by extension)
+		if (!"null".equals(trigger.getName()) && ref.level>trigger.getRefinementLevel()){
 			Guard trig = (Guard) Make.guard(Strings.trigGd_Name, false, Strings.trigGd_Predicate(trigger), Strings.trigGd_Comment);
-			ev.getGuards().add(trig);
+			descriptors.add(Make.descriptor(ev,MachinePackage.Literals.EVENT__GUARDS,trig,0));
 		}
 		return ev;
 	}
@@ -436,9 +437,9 @@ public class Utils {
 	 */
 	public static String getType(ScxmlDataType scxml) {
 		String type = (String) new IumlbScxmlAdapter(scxml).getAnyAttributeValue("type");
-		type = type.trim();
 		//TODO: Use rodin keyboard converter here
 		if (type!=null && type.length()>0) {
+			type = type.trim();
 			if ("NAT".equals(type)) type = "\u2115";
 			if ("INT".equals(type)) type = "\u2124";
 		}else{
