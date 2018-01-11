@@ -50,7 +50,7 @@
    <extension
          point="ac.soton.emf.translators">
       <translator
-            adapter_class="ac.soton.scxml.eventb.EventBImportAdapter"
+            adapter_class="ac.soton.emf.translator.eventb.adapter.EventBTranslatorAdapter"
             command_id="ac.soton.utils.SCXML2EVENTB"
             name="SCXML Event-B generator"
             root_source_class="DocumentRoot"
@@ -116,11 +116,12 @@
          </rule>
       </ruleset>
    </extension>
-      <extension
-            point="ac.soton.eventb.emf.core.extension.navigator.emfFileExtensions">
-         <model
-               extension="scxml">
-         </model>
-      </extension>
+   
+  <extension
+        point="ac.soton.eventb.emf.core.extension.navigator.emfFileExtensions">
+     <model
+           extension="scxml">
+     </model>
+  </extension>
 
 </plugin>
