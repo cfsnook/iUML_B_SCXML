@@ -50,7 +50,7 @@
    <extension
          point="ac.soton.emf.translators">
       <translator
-            adapter_class="ac.soton.iumlb.scxml.importer.EventBImportAdapter"
+            adapter_class="ac.soton.emf.translator.eventb.adapter.EventBTranslatorAdapter"
             command_id="ac.soton.utils.SCXML2iUMLB"
             name="SCXML Importer"
             root_source_class="DocumentRoot"
