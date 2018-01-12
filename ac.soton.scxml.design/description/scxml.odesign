@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<description:Group xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:description="http://www.eclipse.org/sirius/description/1.1.0" xmlns:description_1="http://www.eclipse.org/sirius/diagram/description/1.1.0" xmlns:style="http://www.eclipse.org/sirius/diagram/description/style/1.1.0" xmlns:tool="http://www.eclipse.org/sirius/diagram/description/tool/1.1.0" xmlns:tool_1="http://www.eclipse.org/sirius/description/tool/1.1.0" name="scxml" version="10.0.0.201411061000">
+<description:Group xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:description="http://www.eclipse.org/sirius/description/1.1.0" xmlns:description_1="http://www.eclipse.org/sirius/diagram/description/1.1.0" xmlns:style="http://www.eclipse.org/sirius/diagram/description/style/1.1.0" xmlns:tool="http://www.eclipse.org/sirius/diagram/description/tool/1.1.0" xmlns:tool_1="http://www.eclipse.org/sirius/description/tool/1.1.0" name="scxml" version="11.1.1.201610211630">
   <ownedViewpoints name="SCXML Diagram" modelFileExtension="scxml">
     <ownedRepresentations xsi:type="description_1:DiagramDescription" name="Diagram" initialisation="true" domainClass="scxml.ScxmlScxmlType">
       <defaultLayer name="Default">
         <nodeMappings name="Initial" preconditionExpression="[initial.oclIsUndefined()->first()=false/]" semanticCandidatesExpression="[thisEObject/]" domainClass="scxml.ScxmlScxmlType">
-          <style xsi:type="style:EllipseNodeDescription" showIcon="false" labelExpression="" resizeKind="NSEW">
+          <style xsi:type="style:EllipseNodeDescription" showIcon="false" labelExpression="" sizeComputationExpression="2" resizeKind="NSEW">
             <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
             <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
             <color xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='gray']"/>
@@ -14,7 +14,35 @@
           <style xsi:type="style:EllipseNodeDescription" labelExpression="feature:id" resizeKind="NSEW">
             <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
             <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
-            <color xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='green']"/>
+            <color xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='red']"/>
+          </style>
+        </nodeMappings>
+        <nodeMappings name="Initial2" labelDirectEdit="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='EditID']" semanticCandidatesExpression="[thisEObject.eContents()/]" domainClass="scxml.ScxmlInitialType">
+          <style xsi:type="style:EllipseNodeDescription" labelExpression="" sizeComputationExpression="2" labelPosition="node" resizeKind="NSEW">
+            <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+            <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+            <color xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='gray']"/>
+          </style>
+        </nodeMappings>
+        <nodeMappings name="Refinement_State" preconditionExpression="[thisEObject.anyAttribute -> select(e|e.oclAsType(ecore::EFeatureMapEntry).toString().startsWith('iumlb:refinement=')) -> notEmpty()/]" semanticCandidatesExpression="[thisEObject/]" domainClass="scxml.ScxmlStateType">
+          <style xsi:type="style:SquareDescription" borderSizeComputationExpression="1" borderLineStyle="dot" showIcon="false" labelExpression="[thisEObject.anyAttribute -> select(e|e.oclAsType(ecore::EFeatureMapEntry).toString().startsWith('iumlb:refinement='))->toString().substring(18)/]" sizeComputationExpression="2" labelPosition="node" resizeKind="NSEW">
+            <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='orange']"/>
+            <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+            <color xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='orange']"/>
+          </style>
+        </nodeMappings>
+        <nodeMappings name="Refinement_Parallel" preconditionExpression="[thisEObject.anyAttribute -> select(e|e.oclAsType(ecore::EFeatureMapEntry).toString().startsWith('iumlb:refinement=')) -> notEmpty()/]" semanticCandidatesExpression="[thisEObject/]" domainClass="scxml.ScxmlParallelType">
+          <style xsi:type="style:SquareDescription" borderSizeComputationExpression="1" borderLineStyle="dot" showIcon="false" labelExpression="[thisEObject.anyAttribute -> select(e|e.oclAsType(ecore::EFeatureMapEntry).toString().startsWith('iumlb:refinement='))->toString().substring(18)/]" sizeComputationExpression="2" labelPosition="node" resizeKind="NSEW">
+            <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='orange']"/>
+            <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+            <color xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='orange']"/>
+          </style>
+        </nodeMappings>
+        <nodeMappings name="Refinement_Datamodel" preconditionExpression="[thisEObject.anyAttribute -> select(e|e.oclAsType(ecore::EFeatureMapEntry).toString().startsWith('iumlb:refinement=')) -> notEmpty()/]" semanticCandidatesExpression="[thisEObject/]" domainClass="scxml.ScxmlDatamodelType">
+          <style xsi:type="style:SquareDescription" borderSizeComputationExpression="1" showIcon="false" labelExpression="[thisEObject.anyAttribute -> select(e|e.oclAsType(ecore::EFeatureMapEntry).toString().startsWith('iumlb:refinement='))->toString().substring(18)/]" sizeComputationExpression="2" labelPosition="node" resizeKind="NSEW">
+            <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='dark_orange']"/>
+            <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
+            <color xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='orange']"/>
           </style>
         </nodeMappings>
         <edgeMappings name="InitialTransition" sourceMapping="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Initial']" targetMapping="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='State'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Parallel']" targetFinderExpression="[eContents()->select(e|(e.oclIsKindOf(scxml::ScxmlStateType) and e.oclAsType(scxml::ScxmlStateType).id=self.initial->first().toString()) or (e.oclIsKindOf(scxml::ScxmlParallelType) and e.oclAsType(scxml::ScxmlParallelType).id=self.initial->first().toString()))/]" sourceFinderExpression="[thisEObject/]" domainClass="scxml.ScxmlScxmlType" useDomainElement="true">
@@ -25,7 +53,7 @@
             </centerLabelStyleDescription>
           </style>
         </edgeMappings>
-        <edgeMappings name="Transition" labelDirectEdit="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='EditTransitionLabel']" sourceMapping="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='State'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Parallel']" targetMapping="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='State'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Parallel'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Final']" targetFinderExpression="[eContainer(scxml::ScxmlScxmlType).eAllContents()->select(e|(e.oclIsKindOf(scxml::ScxmlStateType) and e.oclAsType(scxml::ScxmlStateType).id=self.target->first().toString()) or (e.oclIsKindOf(scxml::ScxmlParallelType) and e.oclAsType(scxml::ScxmlParallelType).id=self.target->first().toString()) or (e.oclIsKindOf(scxml::ScxmlFinalType) and e.oclAsType(scxml::ScxmlFinalType).id=self.target->first().toString()))/]" sourceFinderExpression="feature:eContainer" domainClass="scxml.ScxmlTransitionType" useDomainElement="true">
+        <edgeMappings name="Transition" labelDirectEdit="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='EditTransitionLabel']" sourceMapping="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='State'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Parallel'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Initial2']" targetMapping="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='State'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Parallel'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Final']" targetFinderExpression="[eContainer(scxml::ScxmlScxmlType).eAllContents()->select(e|(e.oclIsKindOf(scxml::ScxmlStateType) and e.oclAsType(scxml::ScxmlStateType).id=self.target->first().toString()) or (e.oclIsKindOf(scxml::ScxmlParallelType) and e.oclAsType(scxml::ScxmlParallelType).id=self.target->first().toString()) or (e.oclIsKindOf(scxml::ScxmlFinalType) and e.oclAsType(scxml::ScxmlFinalType).id=self.target->first().toString()))/]" sourceFinderExpression="feature:eContainer" domainClass="scxml.ScxmlTransitionType" useDomainElement="true">
           <style targetArrow="InputFillClosedArrow" sizeComputationExpression="2">
             <strokeColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='gray']"/>
             <centerLabelStyleDescription labelExpression="[(if (cond.oclIsUndefined() or cond='') then '' else ('['+cond+']')  endif) + event/]">
@@ -41,7 +69,7 @@
             </centerLabelStyleDescription>
           </style>
         </edgeMappings>
-        <containerMappings name="State" labelDirectEdit="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='EditID']" semanticCandidatesExpression="[thisEObject.eContents()/]" domainClass="scxml.ScxmlStateType" reusedNodeMappings="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Final']" reusedContainerMappings="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='State'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Parallel'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Datamodel']">
+        <containerMappings name="State" labelDirectEdit="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='EditID']" semanticCandidatesExpression="[thisEObject.eContents()/]" domainClass="scxml.ScxmlStateType" reusedNodeMappings="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Final'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Initial2'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Refinement_State']" reusedContainerMappings="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='State'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Parallel'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Datamodel']">
           <subNodeMappings name="SubInitial" preconditionExpression="[initial1.oclIsUndefined()->first()=false/]" semanticCandidatesExpression="[thisEObject/]" domainClass="scxml.ScxmlStateType">
             <style xsi:type="style:EllipseNodeDescription" labelExpression="" resizeKind="NSEW">
               <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
@@ -49,22 +77,22 @@
               <color xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='gray']"/>
             </style>
           </subNodeMappings>
-          <style xsi:type="style:FlatContainerStyleDescription" arcWidth="10" arcHeight="10" borderSizeComputationExpression="1" labelExpression="feature:id" roundedCorner="true">
+          <style xsi:type="style:FlatContainerStyleDescription" borderSizeComputationExpression="1" labelExpression="feature:id" roundedCorner="true">
             <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
             <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
             <backgroundColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='white']"/>
             <foregroundColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='white']"/>
           </style>
         </containerMappings>
-        <containerMappings name="Parallel" labelDirectEdit="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='EditID']" semanticCandidatesExpression="[thisEObject.eContents()/]" domainClass="scxml.ScxmlParallelType" reusedContainerMappings="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Parallel'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='State'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Datamodel']">
-          <style xsi:type="style:FlatContainerStyleDescription" arcWidth="10" arcHeight="10" labelExpression="feature:id" roundedCorner="true">
+        <containerMappings name="Parallel" labelDirectEdit="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='EditID']" semanticCandidatesExpression="[thisEObject.eContents()/]" domainClass="scxml.ScxmlParallelType" reusedNodeMappings="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Refinement_Parallel']" reusedContainerMappings="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Parallel'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='State'] //@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@containerMappings[name='Datamodel']">
+          <style xsi:type="style:FlatContainerStyleDescription" borderSizeComputationExpression="1" labelExpression="feature:id" roundedCorner="true">
             <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='red']"/>
             <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
             <backgroundColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='white']"/>
             <foregroundColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='white']"/>
           </style>
         </containerMappings>
-        <containerMappings name="Datamodel" semanticCandidatesExpression="[thisEObject.eContents()/]" domainClass="scxml.ScxmlDatamodelType" childrenPresentation="List">
+        <containerMappings name="Datamodel" semanticCandidatesExpression="[thisEObject.eContents()/]" domainClass="scxml.ScxmlDatamodelType" reusedNodeMappings="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Refinement_Datamodel']" childrenPresentation="List">
           <subNodeMappings name="Data" labelDirectEdit="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@toolSections.0/@ownedTools[name='EditDataLabel']" semanticCandidatesExpression="feature:eAllContents" domainClass="scxml.ScxmlDataType">
             <style xsi:type="style:SquareDescription" showIcon="false" labelExpression="[id + ' = ' + expr/]" resizeKind="NSEW">
               <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
@@ -72,7 +100,7 @@
               <color xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='gray']"/>
             </style>
           </subNodeMappings>
-          <style xsi:type="style:ShapeContainerStyleDescription" labelExpression="Datamodel">
+          <style xsi:type="style:ShapeContainerStyleDescription" arcWidth="1" arcHeight="1" borderSizeComputationExpression="1" labelExpression="Datamodel">
             <borderColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
             <labelColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='black']"/>
             <backgroundColor xsi:type="description:SystemColor" href="environment:/viewpoint#//@systemColors/@entries[name='light_yellow']"/>
@@ -186,6 +214,13 @@
                 <subModelOperations xsi:type="tool_1:SetValue" featureName="event" valueExpression="[getTransitionEvent(arg0)/]"/>
                 <subModelOperations xsi:type="tool_1:SetValue" featureName="cond" valueExpression="[getTransitionCondition(arg0)/]"/>
               </firstModelOperations>
+            </initialOperation>
+          </ownedTools>
+          <ownedTools xsi:type="tool:NodeCreationDescription" name="InitialCreation" nodeMappings="//@ownedViewpoints[name='SCXML%20Diagram']/@ownedRepresentations[name='Diagram']/@defaultLayer/@nodeMappings[name='Initial2']">
+            <variable name="container"/>
+            <viewVariable name="containerView"/>
+            <initialOperation>
+              <firstModelOperations xsi:type="tool_1:CreateInstance" typeName="scxml.ScxmlnitialType" referenceName="initial"/>
             </initialOperation>
           </ownedTools>
         </toolSections>
