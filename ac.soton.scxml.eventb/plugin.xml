@@ -105,14 +105,19 @@
                source_class="ScxmlScxmlType">
          </rule>
          <rule
+               name="SCXMLIntialTransitionTypeRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlInitialTransitionTypeRule"
+               source_class="ScxmlTransitionType">
+         </rule>
+         <rule
                name="ScxmlFinalTypeRule"
                rule_class="ac.soton.scxml.eventb.rules.ScxmlFinalTypeRule"
                source_class="ScxmlFinalType">
          </rule>
          <rule
-               name="SCXMLIntialTransitionTypeRule"
-               rule_class="ac.soton.scxml.eventb.rules.ScxmlInitialTransitionTypeRule"
-               source_class="ScxmlTransitionType">
+               name="ScxmlFinalType2FinalRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlFinalType2FinalRule"
+               source_class="ScxmlFinalType">
          </rule>
       </ruleset>
    </extension>
