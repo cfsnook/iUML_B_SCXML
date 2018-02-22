@@ -106,7 +106,7 @@ public class Trigger {
 	}
 	
 	
-	public Set<Set<ScxmlTransitionType>> getTransitionCombinations(int level) {
+	public Set<Set<ScxmlTransitionType>> getTransitionCombinations(int level, int depth) {
 		finalised = true;
 		if (combinations==null){
 			combinations= new HashMap<Integer,Set<Set<ScxmlTransitionType>>>();
@@ -116,14 +116,10 @@ public class Trigger {
 			//store in refinement level mapping
 			for (Set<ScxmlTransitionType> combination : rawCombinations){
 				int refLevel = -1;
-				int depth = -1;
 				for (ScxmlTransitionType tr : combination){
 					int trRefLevel = Utils.getRefinementLevel(tr);
 					if (trRefLevel>refLevel){
 						refLevel = trRefLevel;
-					}
-					if (depth==-1){
-						depth = Utils.getRefinementDepth(tr);	//this is done here because we need some element of the model to get access to it
 					}
 				}
 				Set<Set<ScxmlTransitionType>> temp;

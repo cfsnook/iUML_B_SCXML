@@ -129,10 +129,10 @@ public class ScxmlTransitionTypeRule extends AbstractSCXMLImporterRule implement
 					continue;
 				}
 				
-				for (Set<ScxmlTransitionType> combi : trigger.getTransitionCombinations(ref.level)){
+				for (Set<ScxmlTransitionType> combi : trigger.getTransitionCombinations(ref.level, getRefinementDepth(sourceElement))){
 					if (combi != null && combi.contains(scxmlTransition)) { 
 						//create/find an event to elaborate
-						Event ev = Utils.getOrCreateEvent(ref, translatedElements, trigger, combi);
+						Event ev = Utils.getOrCreateEvent(ref, translatedElements, trigger, combi, getRefinementDepth(sourceElement));
 						transition.getElaborates().add(ev);
 					}
 				}
