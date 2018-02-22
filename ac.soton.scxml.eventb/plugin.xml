@@ -110,8 +110,8 @@
                source_class="ScxmlTransitionType">
          </rule>
          <rule
-               name="ScxmlFinalTypeRule"
-               rule_class="ac.soton.scxml.eventb.rules.ScxmlFinalTypeRule"
+               name="ScxmlFinalType2StateRule"
+               rule_class="ac.soton.scxml.eventb.rules.ScxmlFinalType2StateRule"
                source_class="ScxmlFinalType">
          </rule>
          <rule

@@ -43,7 +43,7 @@ import ac.soton.scxml.eventb.utils.Utils;
  * The pre-final state, also generated from an Scxml final state,
  * is the source of the final transitions and so
  * must already have been generated (is a dependancy)
- * (see rule ScxmlFinalTypeRule) 
+ * (see rule ScxmlFinalType2StateRule) 
  * 
  * This rule needs to run late so that it can find the events that are elaborated 
  * by outgoing transitions of the parent state.. the final transition also elaborates them.

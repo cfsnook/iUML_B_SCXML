@@ -31,7 +31,7 @@ import ac.soton.eventb.statemachines.StatemachinesPackage;
 import ac.soton.scxml.eventb.utils.Make;
 import ac.soton.scxml.eventb.utils.Utils;
 
-public class ScxmlFinalTypeRule extends AbstractSCXMLImporterRule implements IRule {
+public class ScxmlFinalType2StateRule extends AbstractSCXMLImporterRule implements IRule {
 
 
 	ScxmlScxmlType scxmlContainer=null;
