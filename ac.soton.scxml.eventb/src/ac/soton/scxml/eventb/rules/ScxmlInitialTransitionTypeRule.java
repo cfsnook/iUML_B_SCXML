@@ -18,12 +18,12 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlAssignType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlInitialType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlPackage;
+import org.eclipse.sirius.tests.sample.scxml.ScxmlParallelType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlRaiseType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlScxmlType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlStateType;
 import org.eclipse.sirius.tests.sample.scxml.ScxmlTransitionType;
 import org.eventb.emf.core.machine.Action;
-import org.eventb.emf.core.machine.Event;
 import org.eventb.emf.core.machine.Guard;
 import org.eventb.emf.core.machine.Machine;
 import org.eventb.emf.core.machine.MachinePackage;
@@ -32,7 +32,6 @@ import ac.soton.emf.translator.TranslationDescriptor;
 import ac.soton.emf.translator.configuration.IRule;
 import ac.soton.emf.translator.utils.Find;
 import ac.soton.eventb.statemachines.AbstractNode;
-import ac.soton.eventb.statemachines.Initial;
 import ac.soton.eventb.statemachines.State;
 import ac.soton.eventb.statemachines.Statemachine;
 import ac.soton.eventb.statemachines.StatemachinesPackage;
@@ -44,8 +43,11 @@ import ac.soton.scxml.eventb.utils.Refinement;
 import ac.soton.scxml.eventb.utils.Utils;
 
 /**
- * This rules translates SCXML initial transitions
- * It must fire late as it uses what has been generated for normal transitions
+ * This rule translates SCXML initial transitions into 
+ * an iUML-B initial node and transition.
+ * 
+ * This rule needs to run late so that it can find the events that are elaborated 
+ * by incoming transitions of the parent state.. the initial transition also elaborates them.
  * 
  * @author cfs
  *
@@ -53,13 +55,11 @@ import ac.soton.scxml.eventb.utils.Utils;
 public class ScxmlInitialTransitionTypeRule extends AbstractSCXMLImporterRule implements IRule {
 
 	private List<Refinement> refinements = new ArrayList<Refinement>();
+	private ScxmlScxmlType scxmlContainer = null;
 	
-	//This must be done after normal transitions as we will look at what has been generated for incomers.
-	public boolean fireLate(){return true;}
-
 	@Override
 	public boolean enabled(final EObject sourceElement) throws Exception  {
-		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
+		scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
 		return scxmlContainer!=null && sourceElement.eContainer() instanceof ScxmlInitialType;
 	}
 	
@@ -67,7 +67,13 @@ public class ScxmlInitialTransitionTypeRule extends AbstractSCXMLImporterRule im
 	public boolean dependenciesOK(EObject sourceElement, final List<TranslationDescriptor> generatedElements) throws Exception  {
 		
 		ScxmlStateType stateContainer = (ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, sourceElement.eContainer().eContainer());
-		ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
+		//the immediate container state may be in a parallel. If so, the true parent state is the state containing the parallel
+		ScxmlStateType parentState = findTrueParentState(sourceElement);
+				
+		//ScxmlScxmlType scxmlContainer = (ScxmlScxmlType) Find.containing(ScxmlPackage.Literals.SCXML_SCXML_TYPE, sourceElement);
+		
+		boolean dependOnIncomers = parentState==null? false :  isATarget(parentState);
+		
 		refinements.clear();
 		int refinementLevel = Utils.getRefinementLevel(stateContainer==null? scxmlContainer : stateContainer);
 		int depth = getRefinementDepth(sourceElement);		
@@ -76,29 +82,112 @@ public class ScxmlInitialTransitionTypeRule extends AbstractSCXMLImporterRule im
 		for (int i=refinementLevel; i<=depth; i++){
 			Refinement ref = new Refinement();
 			ref.level = i;
+			//check machine is created
 			Machine m = (Machine) Find.translatedElement(generatedElements, null, null, MachinePackage.Literals.MACHINE, Utils.getMachineName(scxmlContainer,i));
 			ref.machine = m;
 			if (ref.machine == null) 
 				return false;
-			
+			//check statemachine is created
 			ref.statemachine = (Statemachine) Find.element(m, null, null, StatemachinesPackage.Literals.STATEMACHINE, parentSmName);
 			if (ref.statemachine == null) 
 				return false;
-			
-			String sourceStateName = sourceElement.eContainer() instanceof ScxmlInitialType? ref.statemachine.getName()+"_initialState" :
-											null;
+			//check source node is created
+			String sourceStateName = sourceElement.eContainer() instanceof ScxmlInitialType? ref.statemachine.getName()+"_initialState" : null;
 			ref.source = (AbstractNode) Find.element(m, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, sourceStateName);
 			if (ref.source == null) 
 				return false;	
+			//check target node is created
 			String targetStateName = ((ScxmlTransitionType) sourceElement).getTarget().get(0);		//we only support single target - ignore the rest
 			ref.target = (AbstractNode) Find.element(m, null, null, StatemachinesPackage.Literals.ABSTRACT_NODE, targetStateName);
 			if (ref.target == null) 
 				return false;
+			//if scxml parent is target, check whether the parent state of the statemachine has its incomers yet
+			if (dependOnIncomers){
+				EObject parent = ref.statemachine.eContainer();
+				if (parent instanceof State && ((State)parent).getIncoming().isEmpty()){
+					return false;
+				}
+			}
 			refinements.add(ref);
 		}
 		return true;
 	}
 
+	/**
+	 * This returns the closest containing ScxmlState
+	 * N.b. it cannot return the element itself - at least one level of containment is achieved.
+	 * @param e
+	 * @return
+	 */
+	private ScxmlStateType findParentState(EObject e) {
+		ScxmlStateType immediateStateContainer = (ScxmlStateType) Find.containing(ScxmlPackage.Literals.SCXML_STATE_TYPE, e.eContainer());
+		return immediateStateContainer;
+	}
+	
+	/**
+	 * This returns the closest containing ScxmlState that is not a child of a parallel region
+	 * N.b. it cannot return the element itself - at least one level of containment is achieved.
+	 * @param e
+	 * @return
+	 */
+	private ScxmlStateType findTrueParentState(EObject e) {
+		ScxmlStateType immediateStateContainer = findParentState(e);
+		return immediateStateContainer == null? null:
+			immediateStateContainer.eContainer() instanceof ScxmlParallelType? (ScxmlStateType) immediateStateContainer.eContainer().eContainer() :
+				immediateStateContainer;
+	}
+	
+	
+
+	/**
+	 * This checks whether the given state is targeted by any transitions or is specified as an initial state
+	 * 
+	 * @param state
+	 * @return
+	 */
+	private boolean isATarget(ScxmlStateType state) {
+		if (state==null) return false;
+		ScxmlStateType parentState = findParentState(state);
+		if (parentState==null) {
+			if (state.eContainer() instanceof ScxmlScxmlType){
+				List<String> ins = ((ScxmlScxmlType)state.eContainer()).getInitial();
+				if (ins==null) return false;		//<<<no initial state specified - model is not well-formed
+				for (String initialName : ins){
+					if (initialName != null && initialName.equals(state.getId())) return true;
+				}
+			}
+		}else{
+			List<String> ins = parentState.getInitial1();
+			if (ins!=null){
+				for (String initialName : ins){
+					if (initialName != null && initialName.equals(state.getId())) return true;
+				}
+			}
+			for (ScxmlStateType siblingState : parentState.getState()){
+				for (ScxmlTransitionType tr : siblingState.getTransition()){
+					for (String targetName : tr.getTarget()){
+						if (targetName != null && targetName.equals(state.getId())) return true;
+					}
+				}
+			}
+			for (ScxmlInitialType siblingState : parentState.getInitial()){
+				ScxmlTransitionType tr = siblingState.getTransition();
+				for (String targetName : tr.getTarget()){
+					if (targetName != null && targetName.equals(state.getId())) return true;
+				}
+			}
+		}
+		return false;
+	}
+
+//	/**
+//	 * fire late to make sure that the parent state has its incoming transitions
+//	 */
+//	@Override
+//	public boolean fireLate(){
+//		return true;
+//	}
+	
 	@Override
 	public List<TranslationDescriptor> fire(EObject sourceElement, List<TranslationDescriptor> translatedElements) throws Exception {
 		//Map<String, Trigger> triggerStore = (Map<String, Trigger>) storage.fetch("triggers");
@@ -113,7 +202,12 @@ public class ScxmlInitialTransitionTypeRule extends AbstractSCXMLImporterRule im
 			Transition transition = Make.transition(ref.source, ref.target, "");
 			ref.statemachine.getTransitions().add(transition);
 			
-			transition.getElaborates().addAll(findElaboratedEvents(transition));
+			EObject parent = ref.statemachine.eContainer();
+			if (parent instanceof State){
+				for (Transition in : ((State)parent).getIncoming()){
+					transition.getElaborates().addAll(in.getElaborates()); 
+				}
+			}
 					
 			//add a guard to define the triggers that are raised by this transition
 			String raiseList = "";
@@ -160,26 +254,6 @@ public class ScxmlInitialTransitionTypeRule extends AbstractSCXMLImporterRule im
 			
 		}
 		return Collections.emptyList();
-	}
-
-	/**
-	 * @param transition
-	 */
-	protected List<Event> findElaboratedEvents(Transition transition) {
-		List<Event> ret = new ArrayList<Event>();
-		EObject parent = transition.eContainer().eContainer();
-		if (parent instanceof State){
-			for (Transition in : ((State)parent).getIncoming()){
-				if (in.getSource() instanceof State){
-					ret.addAll(in.getElaborates());
-				}else if (in.getSource() instanceof Initial){
-					ret.addAll(findElaboratedEvents(in));
-				}
-			}
-		} else {
-			
-		}
-		return ret;
 	}
 	
 }
